@@ -55,6 +55,9 @@ class SoftStep(nn.Module):
 
         return
 
+    def reset_parameters(self):
+        return
+
 
 if __name__ == '__main__':
     # train_loader, test_loader, input_channel, inputdim, nclass = Data().get(CIFAR10)
