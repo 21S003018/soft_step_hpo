@@ -34,6 +34,7 @@ NAME2BATCHSIZE = {
 RESNET = "ResNet"
 MOBILENET = "MobileNetV2"
 SHUFFLENET = "ShuffleNet"
+SOFTSTEP = "SoftStep"
 
 if __name__ == "__main__":
     pass

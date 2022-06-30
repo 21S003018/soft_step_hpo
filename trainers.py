@@ -12,6 +12,7 @@ from time import time
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import mobilenetv2
 from model.cnn_model.shufflenet import ShuffleNet
+from model.nas_model.soft_step import SoftStep
 warnings.filterwarnings("ignore")
 
 
@@ -31,6 +32,8 @@ class CNNTrainer():
             self.model = ResNet(input_channel, inputdim, nclass)
         elif model_name is MOBILENET:
             self.model = mobilenetv2()
+        elif model_name is SOFTSTEP:
+            self.model = SoftStep(input_channel, inputdim, nclass)
         else :
             self.model = ShuffleNet()
         # self.model = eval(self.model_name)(input_channel, inputdim, nclass)

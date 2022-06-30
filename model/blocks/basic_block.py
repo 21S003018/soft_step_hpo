@@ -6,15 +6,17 @@ import torch
 class ResidualBlock(nn.Module):
     expansion = 4
 
-    def __init__(self, in_planes, planes, stride=1):
+    def __init__(self, in_planes, planes, stride=1, expansion=None):
         super(ResidualBlock, self).__init__()
+        if not expansion:
+            self.expansion = expansion
         hidden_planes = round(in_planes / self.expansion)
         self.conv1 = nn.Conv2d(in_planes, hidden_planes,
                                kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
+        self.bn1 = nn.BatchNorm2d(hidden_planes)
 
         self.conv2 = nn.Conv2d(hidden_planes, hidden_planes, kernel_size=3,
-                               stride=stride, padding=1, bias=False, groups=planes)
+                               stride=stride, padding=1, bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = nn.Conv2d(hidden_planes, planes,
@@ -41,8 +43,10 @@ class ResidualBlock(nn.Module):
 class InvertedResidualBlock(nn.Module):
     expansion = 6
 
-    def __init__(self, inplanes, planes, stride=1):
+    def __init__(self, inplanes, planes, stride=1, expansion=None):
         super(InvertedResidualBlock, self).__init__()
+        if not expansion:
+            self.expansion = expansion
         hidden_planes = round(inplanes * self.expansion)
 
         # pw
