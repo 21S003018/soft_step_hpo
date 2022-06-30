@@ -9,9 +9,9 @@ import numpy as np
 
 from utils import Data, num_image
 from time import time
-from model.model.resnet import ResNet
-from model.model.mobilenet import mobilenetv2
-from model.model.shufflenet import ShuffleNet
+from model.cnn_model.resnet import ResNet
+from model.cnn_model.mobilenet import mobilenetv2
+from model.cnn_model.shufflenet import ShuffleNet
 warnings.filterwarnings("ignore")
 
 
