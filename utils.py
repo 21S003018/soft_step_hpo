@@ -14,7 +14,7 @@ class Data():
     def __init__(self) -> None:
         self.datasets = DATASETS
         if torch.cuda.is_available():
-            self.device = "cuda"
+            self.device = "cuda:3"
         else:
             self.device = "cpu"
         return

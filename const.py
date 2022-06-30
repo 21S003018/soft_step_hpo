@@ -1,3 +1,5 @@
+# device
+DEVICE = "cuda:3"
 # datasets
 CIFAR10 = "cifar-10-batches-py"
 CIFAR100 = "cifar-100-python"
@@ -32,9 +34,12 @@ NAME2BATCHSIZE = {
 }
 # cnn model name
 RESNET = "ResNet"
-MOBILENET = "MobileNetV2"
-SHUFFLENET = "ShuffleNet"
+MOBILENET = "mobilenetv2"
+SHUFFLENET = "shufflenet"
 SOFTSTEP = "SoftStep"
+
+# struc config
+RESIDUALCIFAR10 = "config/residual_cifar10.json"
 
 if __name__ == "__main__":
     pass

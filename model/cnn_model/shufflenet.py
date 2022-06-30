@@ -295,6 +295,8 @@ class ShuffleNet(nn.Module):
     def reset_parameters(self):
         return
 
+def shufflenet(input_channel, inputdim, nclass):
+    return ShuffleNet(in_channels=input_channel, num_classes=nclass)
 
 if __name__ == "__main__":
     """Testing

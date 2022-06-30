@@ -11,7 +11,7 @@ from utils import Data, num_image
 from time import time
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import mobilenetv2
-from model.cnn_model.shufflenet import ShuffleNet
+from model.cnn_model.shufflenet import shufflenet
 from model.nas_model.soft_step import SoftStep
 warnings.filterwarnings("ignore")
 
@@ -24,10 +24,11 @@ class CNNTrainer():
     def __init__(self, model_name, dataset) -> None:
         # init data
         self.dataset = dataset
-        self.train_loader, self.test_loader, input_channel, inputdim, nclass = Data().get(dataset)
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)  # get num of image
         # init model
         self.model_name = model_name
+        '''
         if model_name is RESNET:
             self.model = ResNet(input_channel, inputdim, nclass)
         elif model_name is MOBILENET:
@@ -36,9 +37,11 @@ class CNNTrainer():
             self.model = SoftStep(input_channel, inputdim, nclass)
         else :
             self.model = ShuffleNet()
-        # self.model = eval(self.model_name)(input_channel, inputdim, nclass)
+        '''
+        self.model = eval(self.model_name)(
+            self.input_channel, self.inputdim, self.nclass)
         if torch.cuda.is_available():
-            self.model.cuda()
+            self.model.cuda(DEVICE)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         pass
 
@@ -55,8 +58,8 @@ class CNNTrainer():
             st_time = time()
             for imgs, label in self.train_loader:
                 if torch.cuda.is_available():
-                    imgs = imgs.cuda()
-                    label = label.cuda()
+                    imgs = imgs.cuda(DEVICE)
+                    label = label.cuda(DEVICE)
                 preds = self.model(imgs)
                 loss = F.cross_entropy(preds, label)
                 self.optimizer.zero_grad()
@@ -81,8 +84,8 @@ class CNNTrainer():
         Y = []
         for imgs, label in self.test_loader:
             if torch.cuda.is_available():
-                imgs = imgs.cuda()
-                label = label.cuda()
+                imgs = imgs.cuda(DEVICE)
+                label = label.cuda(DEVICE)
             tmp_pred = self.model(imgs)
             tmp = tmp_pred.detach().cpu().numpy()
             preds.extend([np.argmax(tmp[i]) for i in range(len(tmp))])
@@ -102,8 +105,8 @@ class CNNTrainer():
         nsample = 0
         for imgs, label in self.test_loader:
             if torch.cuda.is_available():
-                imgs = imgs.cuda()
-                label = label.cuda()
+                imgs = imgs.cuda(DEVICE)
+                label = label.cuda(DEVICE)
             preds = self.model(imgs)
             ncorrect += torch.sum(preds.max(1)[1].eq(label).double())
             nsample += len(label)
@@ -116,4 +119,14 @@ class CNNTrainer():
     def load_model(self):
         state_dict = torch.load(self.save_model_path)
         self.model.load_state_dict(state_dict)
+        return
+
+
+class NasTrainer(CNNTrainer):
+    def __init__(self, model_name, dataset, path=None) -> None:
+        super(NasTrainer, self).__init__(model_name, dataset)
+        self.model = eval(self.model_name)(self.input_channel,
+                                           self.inputdim, self.nclass, path=path)
+        if torch.cuda.is_available():
+            self.model.cuda(DEVICE)
         return

@@ -8,7 +8,7 @@ class ResidualBlock(nn.Module):
 
     def __init__(self, in_planes, planes, stride=1, expansion=None):
         super(ResidualBlock, self).__init__()
-        if not expansion:
+        if not expansion is None:
             self.expansion = expansion
         hidden_planes = round(in_planes / self.expansion)
         self.conv1 = nn.Conv2d(in_planes, hidden_planes,
