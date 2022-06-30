@@ -30,6 +30,10 @@ NAME2BATCHSIZE = {
     MNIST: 128,
     SVHN: 64,
 }
+# cnn model name
+RESNET = "ResNet"
+MOBILENET = "MobileNetV2"
+SHUFFLENET = "ShuffleNet"
 
 if __name__ == "__main__":
     pass

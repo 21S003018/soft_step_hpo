@@ -1,7 +1,3 @@
-from enum import auto
-import json
-import pickle
-import copy
 import torch
 from torch.optim.adam import Adam
 from torch.optim.adamax import Adamax
@@ -10,8 +6,12 @@ import torch.nn.functional as F
 import warnings
 from sklearn.metrics import precision_recall_fscore_support as metrics
 import numpy as np
+
 from utils import Data, num_image
 from time import time
+from model.model.resnet import ResNet
+from model.model.mobilenet import mobilenetv2
+from model.model.shufflenet import ShuffleNet
 warnings.filterwarnings("ignore")
 
 
@@ -27,7 +27,15 @@ class CNNTrainer():
         self.num_image = num_image(self.train_loader)  # get num of image
         # init model
         self.model_name = model_name
-        self.model = eval(self.model_name)(input_channel, inputdim, nclass)
+        if model_name is RESNET:
+            self.model = ResNet(input_channel, inputdim, nclass)
+        elif model_name is MOBILENET:
+            self.model = mobilenetv2()
+        else :
+            self.model = ShuffleNet()
+        # self.model = eval(self.model_name)(input_channel, inputdim, nclass)
+        if torch.cuda.is_available():
+            self.model.cuda()
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         pass
 
