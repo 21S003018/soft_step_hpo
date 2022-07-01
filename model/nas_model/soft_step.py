@@ -1,11 +1,11 @@
 import torch.nn as nn
 from const import CIFAR10, MNIST
-from model.blocks.basic_block import ResidualBlock, InvertedResidualBlock
+from model.blocks.basic_block import ResidualBlock, InvertedResidualBlock, SoftResidualBlock
 import json
 
 
 class SoftStep(nn.Module):
-    def __init__(self, input_channel, ndim, num_classes, path=None, block=ResidualBlock) -> None:
+    def __init__(self, input_channel, ndim, num_classes, path=None, block=SoftResidualBlock) -> None:
         super(SoftStep, self).__init__()
         if path is None:
             block_input_channel = 32
@@ -75,6 +75,7 @@ class SoftStep(nn.Module):
     def forward(self, x):
         x = self.conv_in(x)
         x = self.blocks(x)
+        x = self.conv_out(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
@@ -85,6 +86,10 @@ class SoftStep(nn.Module):
         return
 
     def reset_parameters(self):
+        return
+
+    def generate_struc(self):
+
         return
 
 

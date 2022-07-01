@@ -1,4 +1,5 @@
 {
+    "config_type": "nas",
     "b0": {
         "conv_in": 64,
         "stride_in": 1,
