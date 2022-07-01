@@ -28,16 +28,6 @@ class CNNTrainer():
         self.num_image = num_image(self.train_loader)  # get num of image
         # init model
         self.model_name = model_name
-        '''
-        if model_name is RESNET:
-            self.model = ResNet(input_channel, inputdim, nclass)
-        elif model_name is MOBILENET:
-            self.model = mobilenetv2()
-        elif model_name is SOFTSTEP:
-            self.model = SoftStep(input_channel, inputdim, nclass)
-        else :
-            self.model = ShuffleNet()
-        '''
         self.model = eval(self.model_name)(
             self.input_channel, self.inputdim, self.nclass)
         if torch.cuda.is_available():
@@ -46,7 +36,6 @@ class CNNTrainer():
         pass
 
     def train(self):
-        self.model.reset_parameters()
         self.optimizer = torch.optim.SGD(
             self.model.parameters(), lr=0.1, momentum=P_MOMENTUM)
         lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
@@ -69,9 +58,10 @@ class CNNTrainer():
             # eval
             val_accu, _, _, _, val_loss = self.val()
             if val_accu > opt_accu:
+                opt_accu = val_accu
                 self.save_model()
-            print(
-                f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
+                print(
+                    f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
             lr_schedular.step()
         return
 
@@ -124,9 +114,70 @@ class CNNTrainer():
 
 class NasTrainer(CNNTrainer):
     def __init__(self, model_name, dataset, path=None) -> None:
-        super(NasTrainer, self).__init__(model_name, dataset)
-        self.model = eval(self.model_name)(self.input_channel,
-                                           self.inputdim, self.nclass, path=path)
+        self.dataset = dataset
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)  # get num of image
+        # init model
+        self.model_name = model_name
+        self.model = SoftStep(self.input_channel,
+                              self.inputdim, self.nclass, path=path)
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
+        self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
+        self.flag = 0
+        return
+
+    def train(self):
+        self.model_optimizer = torch.optim.SGD(
+            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM)
+        self.arch_optimizer = torch.optim.SGD(
+            self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM)
+        lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
+            self.model_optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
+        opt_accu = -1
+        for i in range(EPOCHS):
+            self.model.train()
+            loss_sum = 0
+            st_time = time()
+            if self.flag % 2 == 0:
+                # tune model params
+                for imgs, label in self.train_loader:
+                    if torch.cuda.is_available():
+                        imgs = imgs.cuda(DEVICE)
+                        label = label.cuda(DEVICE)
+                    preds = self.model(imgs)
+                    loss = F.cross_entropy(preds, label)
+                    self.model_optimizer.zero_grad()
+                    loss.backward()
+                    self.model_optimizer.step()
+                    loss_sum += loss.item() * len(imgs)/self.num_image
+            else:
+                # tune arch params
+                for imgs, label in self.train_loader:
+                    if torch.cuda.is_available():
+                        imgs = imgs.cuda(DEVICE)
+                        label = label.cuda(DEVICE)
+                    preds = self.model(imgs)
+                    loss = F.cross_entropy(preds, label)
+                    self.arch_optimizer.zero_grad()
+                    loss.backward()
+                    self.arch_optimizer.step()
+                    loss_sum += loss.item() * len(imgs)/self.num_image
+            # eval
+            val_accu, _, _, _, val_loss = self.val()
+            if val_accu > opt_accu:
+                self.save_model()
+                opt_accu = val_accu
+                print(
+                    f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
+                # # check arch params
+                # size_vectors = self.model.generate_size_vector()
+                # for tmp in size_vectors:
+                #     print(tmp)
+                # print()
+            lr_schedular.step()
+        return
+
+    def train_cnn(self):
+        super().train()
         return

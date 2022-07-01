@@ -1,3 +1,4 @@
+from model.blocks.basic_block import SoftResidualBlock
 from model.cnn_model.resnet import ResNet
 from model.nas_model.soft_step import SoftStep
 from utils import Data
@@ -6,17 +7,25 @@ import torch
 from torchstat import stat
 from torchsummary import summary
 from trainers import CNNTrainer, NasTrainer
-from model.nas_model.layers.conv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
+from model.layers.conv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
+from model.cnn_model.mobilenet import MobileNetV2
 import json
 import torch.nn as nn
 
 # test model's statistic
-# # train_loader, test_loader, input_channel, inputdim, nclass = Data().get(CIFAR10)
-# input_channel, inputdim, nclass = 3, 32, 10
-# model = SoftStep(input_channel, inputdim, nclass, path=RESIDUALCIFAR10)
-# # model = ResNet(input_channel, inputdim, nclass)
-# # print(stat(model, (3, 32, 32)))
-# # summary(model.cuda(DEVICE), input_size=(3, 32, 32), batch_size=-1)
+# train_loader, test_loader, input_channel, inputdim, nclass = Data().get(CIFAR10)
+input_channel, inputdim, nclass = 3, 256, 1000
+# model = SoftStep(input_channel, inputdim, nclass,
+#  path=INVERTEDRESIDUALIMAGENET)
+# model = ResNet(input_channel, inputdim, nclass)
+model = MobileNetV2()
+# # model = SoftResidualBlock(input_channel, planes=64,
+# #   kernel_size=7, stride=2, expansion=1)
+print(stat(model, (3, 256, 256)))
+# summary(model.cuda(), input_size=(3, 256, 256), batch_size=-1)
+# for name, param in model.arch_parameters():
+#     print(name)
+#     # break
 
 # # test nas model
 # trainer = NasTrainer(SOFTSTEP, CIFAR10, path=RESIDUALCIFAR10)
@@ -28,12 +37,11 @@ import torch.nn as nn
 # print(type(struc["b0"]["conv_in"]))
 
 # test dhpo conv layer
-x = torch.rand(1, 3, 32, 32)
-model = SoftKernelConv2d(
-    in_channels=3, out_channels=3, kernel_size=3, groups=1)
-model.cuda(DEVICE)
-model.format_kernel_size()
-print(model.kernel_size_vector.device)
+# x = torch.rand(1, 3, 32, 32)
+# model = SoftKernelConv2d(
+#     in_channels=3, out_channels=3, kernel_size=7, groups=1)
+# model.cuda(DEVICE)
+# print(model.format_kernel_size())
 # print(model.up_traingle_for_channel)
 # preds = model(x)
 # print(preds.size(), model.format_channel_size().size())
@@ -45,7 +53,8 @@ print(model.kernel_size_vector.device)
 # print(model.weight.size())
 
 # x = torch.rand(1, 3)
-# print(x)
+# x = x.cuda(DEVICE)
+# print(x.device)
 # y = torch.ones(1, 7)
 # y[0, 1:] = torch.stack((x, x), dim=1).squeeze(0).T.flatten().unsqueeze(0)
 # print(y)

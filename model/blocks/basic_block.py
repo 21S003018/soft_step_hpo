@@ -1,13 +1,27 @@
 from torch import nn
 import torch.nn.functional as F
 import torch
-from model.nas_model.layers.conv import SoftChannelConv2d, SoftKernelConv2d
+from model.layers.conv import SoftChannelConv2d, SoftKernelConv2d
 
 
-class ResidualBlock(nn.Module):
+class Block(nn.Module):
+    def __init__(self) -> None:
+        super(Block, self).__init__()
+        return
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn2(self.conv2(out)))
+        out = self.bn3(self.conv3(out))
+        out += self.shortcut(x)
+        out = F.relu(out)
+        return out
+
+
+class ResidualBlock(Block):
     expansion = 4
 
-    def __init__(self, in_planes, planes, stride=1, expansion=None):
+    def __init__(self, in_planes, planes, kernel_size=3, stride=1, expansion=None):
         super(ResidualBlock, self).__init__()
         if not expansion is None:
             self.expansion = expansion
@@ -16,8 +30,8 @@ class ResidualBlock(nn.Module):
                                kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
-        self.conv2 = nn.Conv2d(hidden_planes, hidden_planes, kernel_size=3,
-                               stride=stride, padding=1, bias=False, groups=hidden_planes)
+        self.conv2 = nn.Conv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
+                               stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = nn.Conv2d(hidden_planes, planes,
@@ -32,18 +46,12 @@ class ResidualBlock(nn.Module):
                 nn.BatchNorm2d(planes)
             )
 
-    def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
-        out = self.bn3(self.conv3(out))
-        out += self.shortcut(x)
-        out = F.relu(out)
-        return out
 
+class SoftResidualBlock(Block):
+    expansion = 4
 
-class SoftResidualBlock(ResidualBlock):
-    def __init__(self, in_planes, planes, stride=1, expansion=None):
-        # super().__init__(in_planes, planes, stride, expansion)
+    def __init__(self, in_planes, planes, kernel_size=3, stride=1, expansion=None):
+        super(SoftResidualBlock, self).__init__()
         if not expansion is None:
             self.expansion = expansion
         hidden_planes = round(in_planes / self.expansion)
@@ -51,8 +59,8 @@ class SoftResidualBlock(ResidualBlock):
                                        kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
-        self.conv2 = nn.Conv2d(hidden_planes, hidden_planes, kernel_size=3,
-                               stride=stride, padding=1, bias=False, groups=hidden_planes)
+        self.conv2 = SoftKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size, stride=stride, padding=int(
+            kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = SoftChannelConv2d(
@@ -66,30 +74,29 @@ class SoftResidualBlock(ResidualBlock):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes)
             )
-
         return
 
 
-class InvertedResidualBlock(nn.Module):
+class InvertedResidualBlock(Block):
     expansion = 6
 
-    def __init__(self, inplanes, planes, stride=1, expansion=None):
+    def __init__(self, inplanes, planes, kernel_size=3, stride=1, expansion=None):
         super(InvertedResidualBlock, self).__init__()
         if not expansion:
             self.expansion = expansion
         hidden_planes = round(inplanes * self.expansion)
 
         # pw
-        self.conv1 = nn.Conv2d(inplanes, hidden_planes, kernel_size=1,
-                               stride=1, padding=0, bias=False)
+        self.conv1 = nn.Conv2d(inplanes, hidden_planes,
+                               kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(hidden_planes)
         # dw
-        self.conv2 = nn.Conv2d(hidden_planes, hidden_planes, kernel_size=3,
-                               stride=stride, padding=1, groups=hidden_planes, bias=False)
+        self.conv2 = nn.Conv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
+                               stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
         # pw-linear
-        self.conv3 = nn.Conv2d(hidden_planes, planes, kernel_size=1,
-                               stride=1, padding=0, bias=False)
+        self.conv3 = nn.Conv2d(hidden_planes, planes,
+                               kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
@@ -100,13 +107,35 @@ class InvertedResidualBlock(nn.Module):
                 nn.BatchNorm2d(planes)
             )
 
-    def forward(self, x):
-        out = F.relu6(self.bn1(self.conv1(x)), inplace=True)
-        out = F.relu6(self.bn2(self.conv2(out)), inplace=True)
-        out = self.bn3(self.conv3(out))
-        out += self.shortcut(x)
-        out = F.relu(out)
-        return out
+class SoftInvertedResidualBlock(Block):
+    expansion = 6
+
+    def __init__(self, inplanes, planes, kernel_size=3, stride=1, expansion=None):
+        super(SoftInvertedResidualBlock, self).__init__()
+        if not expansion:
+            self.expansion = expansion
+        hidden_planes = round(inplanes * self.expansion)
+
+        # pw
+        self.conv1 = SoftChannelConv2d(inplanes, hidden_planes,
+                               kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(hidden_planes)
+        # dw
+        self.conv2 = SoftKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
+                               stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+        self.bn2 = nn.BatchNorm2d(hidden_planes)
+        # pw-linear
+        self.conv3 = SoftChannelConv2d(hidden_planes, planes,
+                               kernel_size=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(planes)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or inplanes != hidden_planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(inplanes, planes,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(planes)
+            )
 
 
 if __name__ == '__main__':

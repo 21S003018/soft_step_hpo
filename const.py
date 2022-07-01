@@ -26,6 +26,7 @@ SVHNSTD = (0.19803012907505035, 0.2010156363248825, 0.19703614711761475)
 P_MOMENTUM = 0.9
 BATCHSIZE = 64
 EPOCHS = 200
+EXPANDTIMES = 20
 NAME2BATCHSIZE = {
     CIFAR10: 128,
     CIFAR100: 32,
@@ -40,6 +41,7 @@ SOFTSTEP = "SoftStep"
 
 # struc config
 RESIDUALCIFAR10 = "config/residual_cifar10.json"
+INVERTEDRESIDUALIMAGENET = "config/inverted_residual_imagenet.json"
 
 if __name__ == "__main__":
     pass

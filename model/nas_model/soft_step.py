@@ -1,6 +1,6 @@
 import torch.nn as nn
 from const import CIFAR10, MNIST
-from model.blocks.basic_block import ResidualBlock, InvertedResidualBlock, SoftResidualBlock
+from model.blocks.basic_block import ResidualBlock, InvertedResidualBlock, SoftResidualBlock, SoftInvertedResidualBlock
 import json
 
 
@@ -23,11 +23,11 @@ class SoftStep(nn.Module):
             layers = []
             input_channel = block_input_channel
             for block_config in struc["blocks"]:
-                e, c, n, s = block_config['e'], block_config['c'], block_config['n'], block_config['s']
+                e, c, n, k, s = block_config['e'], block_config['c'], block_config['n'], block_config['k'], block_config['s']
                 output_channel = c
                 for i in range(n):
                     layers.append(
-                        block(input_channel, output_channel, s if i == 0 else 1, e))
+                        block(input_channel, output_channel, k, s if i == 0 else 1, e))
                     input_channel = output_channel
             self.blocks = nn.Sequential(*layers)
             block_output_channel = struc["b0"]["conv_out"]
@@ -91,6 +91,20 @@ class SoftStep(nn.Module):
     def generate_struc(self):
 
         return
+
+    def model_parameters(self):
+        for name, param in self.named_parameters():
+            if name.__contains__("weight") or name.__contains__("bias"):
+                yield param
+
+    def arch_parameters(self):
+        for name, param in self.named_parameters():
+            if name.__contains__("base") or name.__contains__("controller"):
+                yield param
+
+    def generate_size_vector(self):
+        for block in self.blocks:
+            yield block.conv1.opt_channel_size_vector, block.conv2.opt_kernel_size_vector, block.conv3.opt_channel_size_vector
 
 
 if __name__ == '__main__':

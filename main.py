@@ -9,5 +9,6 @@ if __name__ == "__main__":
     # trainer = CNNTrainer(SHUFFLENET, CIFAR10)
     trainer = NasTrainer(SOFTSTEP, CIFAR10, path=RESIDUALCIFAR10)
     # nas model
-    trainer.train()
-    print(trainer.get_metrics())
+    # trainer.train()
+    trainer.train_cnn()
+    # print(trainer.get_metrics())
