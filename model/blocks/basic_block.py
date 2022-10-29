@@ -1,7 +1,7 @@
 from torch import nn
 import torch.nn.functional as F
 import torch
-from model.layers.conv import SoftChannelConv2d, SoftKernelConv2d
+from model.layers.softconv import SoftChannelConv2d, SoftKernelConv2d
 
 
 class Block(nn.Module):
@@ -106,6 +106,7 @@ class InvertedResidualBlock(Block):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes)
             )
+
 
 class SoftInvertedResidualBlock(Block):
     expansion = 6

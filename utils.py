@@ -1,11 +1,9 @@
-from zmq import device
 from const import *
 import sklearn.preprocessing as sp
 from sklearn.model_selection import train_test_split
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import numpy as np
-import pandas as pd
 import torch
 import pickle
 

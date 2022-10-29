@@ -65,7 +65,7 @@ class Bottleneck(nn.Module):
 class ResNet(nn.Module):
     def __init__(self, input_channel, ndim, num_classes, block=BasicBlock, num_blocks=[2, 2, 2, 2]):
         super(ResNet, self).__init__()
-        block = BasicBlock
+        # block = BasicBlock
         # block = Bottleneck
         # num_blocks = [3, 4, 6, 3]
         self.in_planes = 64
@@ -99,3 +99,8 @@ class ResNet(nn.Module):
 
     def reset_parameters(self):
         return
+
+def resnet50():
+    """ return a ResNet 50 object
+    """
+    return ResNet(3,32,100,block=Bottleneck, num_blocks=[3, 4, 6, 3])

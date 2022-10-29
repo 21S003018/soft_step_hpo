@@ -1,27 +1,29 @@
 from model.blocks.basic_block import SoftResidualBlock
 from model.cnn_model.resnet import ResNet
 from model.nas_model.soft_step import SoftStep
-from utils import Data
+# from utils import Data
 from const import *
 import torch
+import thop
 from torchstat import stat
-from torchsummary import summary
-from trainers import CNNTrainer, NasTrainer
-from model.layers.conv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
+# from torchsummary import summary
+# from pthflops import count_opss
+# from trainers import CNNTrainer, NasTrainer
+from model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
 from model.cnn_model.mobilenet import MobileNetV2
 import json
 import torch.nn as nn
 
 # test model's statistic
 # train_loader, test_loader, input_channel, inputdim, nclass = Data().get(CIFAR10)
-input_channel, inputdim, nclass = 3, 256, 1000
+# input_channel, inputdim, nclass = 3, 256, 1000
 # model = SoftStep(input_channel, inputdim, nclass,
 #  path=INVERTEDRESIDUALIMAGENET)
 # model = ResNet(input_channel, inputdim, nclass)
-model = MobileNetV2()
+# model = MobileNetV2()
 # # model = SoftResidualBlock(input_channel, planes=64,
 # #   kernel_size=7, stride=2, expansion=1)
-print(stat(model, (3, 256, 256)))
+# print(stat(model, (3, 256, 256)))
 # summary(model.cuda(), input_size=(3, 256, 256), batch_size=-1)
 # for name, param in model.arch_parameters():
 #     print(name)
@@ -36,10 +38,18 @@ print(stat(model, (3, 256, 256)))
 #     struc = json.load(f)
 # print(type(struc["b0"]["conv_in"]))
 
-# test dhpo conv layer
-# x = torch.rand(1, 3, 32, 32)
-# model = SoftKernelConv2d(
-#     in_channels=3, out_channels=3, kernel_size=7, groups=1)
+# test softstep conv layer
+x = torch.rand(1, 3, 32, 32)
+# model = SoftKernelConv2d(in_channels=3, out_channels=64, kernel_size=7, groups=1)
+# model = SoftChannelConv2d(in_channels=3, out_channels=64, kernel_size=7, groups=1)
+# model = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, groups=1)
+model = ResNet(3,32,10)
+# out = model(x)
+stat(model, (3, 32, 32))
+# count_ops(model, x)
+flops, params = thop.profile(model,inputs=(x,)) 
+print(flops)
+
 # model.cuda(DEVICE)
 # print(model.format_kernel_size())
 # print(model.up_traingle_for_channel)
