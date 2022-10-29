@@ -59,7 +59,7 @@ class CNNTrainer():
             val_accu, _, _, _, val_loss = self.val()
             if val_accu > opt_accu:
                 opt_accu = val_accu
-                self.save_model()
+                # self.save_model()
                 print(
                     f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
             lr_schedular.step()

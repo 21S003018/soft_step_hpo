@@ -1,5 +1,5 @@
 # device
-DEVICE = "cuda:3"
+DEVICE = "cuda:0"
 # datasets
 CIFAR10 = "cifar-10-batches-py"
 CIFAR100 = "cifar-100-python"
@@ -31,7 +31,7 @@ EPOCHS = 200
 EXPANDTIMES = 20
 NAME2BATCHSIZE = {
     CIFAR10: 128,
-    CIFAR100: 32,
+    CIFAR100: 128,
     MNIST: 128,
     SVHN: 64,
 }

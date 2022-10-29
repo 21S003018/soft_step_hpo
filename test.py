@@ -4,8 +4,8 @@ from model.nas_model.soft_step import SoftStep
 # from utils import Data
 from const import *
 import torch
-import thop
-from torchstat import stat
+# import thop
+# from torchstat import stat
 # from torchsummary import summary
 # from pthflops import count_opss
 # from trainers import CNNTrainer, NasTrainer
@@ -43,11 +43,11 @@ x = torch.rand(1, 3, 32, 32)
 # model = SoftKernelConv2d(in_channels=3, out_channels=64, kernel_size=7, groups=1)
 # model = SoftChannelConv2d(in_channels=3, out_channels=64, kernel_size=7, groups=1)
 # model = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, groups=1)
-model = ResNet(3,32,10)
+model = ResNet(3, 32, 10)
 # out = model(x)
 stat(model, (3, 32, 32))
 # count_ops(model, x)
-flops, params = thop.profile(model,inputs=(x,)) 
+flops, params = thop.profile(model, inputs=(x,))
 print(flops)
 
 # model.cuda(DEVICE)
