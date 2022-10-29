@@ -42,8 +42,9 @@ SHUFFLENET = "shufflenet"
 SOFTSTEP = "SoftStep"
 
 # struc config
-RESIDUALCIFAR10 = "config/residual_cifar10.json"
-INVERTEDRESIDUALIMAGENET = "config/inverted_residual_imagenet.json"
+RESIDUALSPACE = "config/residual_cifar10.json"
+INVERTEDRESIDUALSPACE = "config/inverted_residual_imagenet.json"
+SEARCHSPACE = "config/inverted_residual_imagenet.json"
 
 if __name__ == "__main__":
     pass

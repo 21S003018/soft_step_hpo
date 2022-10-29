@@ -1,3 +1,4 @@
+import json
 import torch
 from torch.optim.adam import Adam
 from torch.optim.adamax import Adamax
@@ -114,9 +115,10 @@ class CNNTrainer():
 
 class NasTrainer(CNNTrainer):
     def __init__(self, model_name, dataset, path=None) -> None:
+        # load data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
-        self.num_image = num_image(self.train_loader)  # get num of image
+        self.num_image = num_image(self.train_loader)
         # init model
         self.model_name = model_name
         self.model = SoftStep(self.input_channel,
@@ -181,3 +183,105 @@ class NasTrainer(CNNTrainer):
     def train_cnn(self):
         super().train()
         return
+
+
+class SoftStepTrainer(CNNTrainer):
+    def __init__(self, model_name, dataset, path=None) -> None:
+        # load data
+        self.dataset = dataset
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
+        # init model
+        self.path = path
+        self.model_name = model_name
+        self.model = SoftStep(self.input_channel,
+                              self.inputdim, self.nclass, path=path)
+        if torch.cuda.is_available():
+            self.model.cuda(DEVICE)
+        self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
+        self.flag = 0
+        return
+
+    def train(self):
+        self.model_optimizer = torch.optim.SGD(
+            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM)
+        self.arch_optimizer = torch.optim.SGD(
+            self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM)
+        lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
+            self.model_optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
+        opt_accu = -1
+        for i in range(EPOCHS):
+            self.model.train()
+            loss_sum = 0
+            st_time = time()
+            if self.flag % 2 == 0:
+                # tune model params
+                for imgs, label in self.train_loader:
+                    if torch.cuda.is_available():
+                        imgs = imgs.cuda(DEVICE)
+                        label = label.cuda(DEVICE)
+                    preds = self.model(imgs)
+                    loss = F.cross_entropy(preds, label)
+                    self.model_optimizer.zero_grad()
+                    loss.backward()
+                    self.model_optimizer.step()
+                    loss_sum += loss.item() * len(imgs)/self.num_image
+            else:
+                # tune arch params
+                for imgs, label in self.train_loader:
+                    if torch.cuda.is_available():
+                        imgs = imgs.cuda(DEVICE)
+                        label = label.cuda(DEVICE)
+                    preds = self.model(imgs)
+                    loss = F.cross_entropy(preds, label)
+                    self.arch_optimizer.zero_grad()
+                    loss.backward()
+                    self.arch_optimizer.step()
+                    loss_sum += loss.item() * len(imgs)/self.num_image
+            # eval
+            val_accu, _, _, _, val_loss = self.val()
+            if val_accu > opt_accu:
+                self.save_model()
+                opt_accu = val_accu
+                print(
+                    f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
+                # # check arch params
+                # size_vectors = self.model.generate_size_vector()
+                # for tmp in size_vectors:
+                #     print(tmp)
+                # print()
+            lr_schedular.step()
+        return
+    
+    def generate_struc(self):
+        # prepare a body for struc
+        with open(self.path, 'r') as f:
+            net_struc = json.load(f)
+        blocks = []
+        for block in net_struc["blocks"]:
+            for _ in range(block["n"]):
+                blocks.append({"e":block["e"],"c":block["c"],"n":1,"k":block["k"],"s":block["s"]})
+        alphas = []
+        for name, param in self.model.named_parameters():
+            if name.__contains__('weight') or name.__contains__('bias'):
+                continue
+            alphas.append(param.item())
+        # print(alphas)
+        alphas = np.array(alphas).reshape((int(len(alphas)/3),3))
+        c_last = net_struc["b0"]["conv_in"]
+        for i, alpha_item in enumerate(alphas):
+            c1, k, c2 = alpha_item
+            e = c1/c_last
+            c = int(c2)
+            k = 2*max(int(k),0) + 1
+            c_last = c2
+            blocks[i]["e"],blocks[i]["c"],blocks[i]["k"] = e,c,k
+        net_struc["blocks"] = blocks
+        # with open("config/{}-softstep_opt.json".format(self.dataset), "w") as f:
+        #     json.dump(net_struc,f)
+        return net_struc
+
+if __name__ == "__main__":
+    trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=SEARCHSPACE)
+    trainer.generate_struc()
+    pass

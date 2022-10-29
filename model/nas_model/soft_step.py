@@ -1,6 +1,6 @@
 import torch.nn as nn
 from const import CIFAR10, MNIST
-from model.blocks.basic_block import ResidualBlock, InvertedResidualBlock, SoftResidualBlock, SoftInvertedResidualBlock
+from model.blocks.basic_block import SoftResidualBlock, SoftInvertedResidualBlock
 import json
 
 
@@ -81,13 +81,6 @@ class SoftStep(nn.Module):
         x = self.fc(x)
         return x
 
-    def test_model(self):
-
-        return
-
-    def reset_parameters(self):
-        return
-
     def generate_struc(self):
 
         return
@@ -101,11 +94,6 @@ class SoftStep(nn.Module):
         for name, param in self.named_parameters():
             if name.__contains__("base") or name.__contains__("controller"):
                 yield param
-
-    def generate_size_vector(self):
-        for block in self.blocks:
-            yield block.conv1.opt_channel_size_vector, block.conv2.opt_kernel_size_vector, block.conv3.opt_channel_size_vector
-
 
 if __name__ == '__main__':
     # train_loader, test_loader, input_channel, inputdim, nclass = Data().get(CIFAR10)
