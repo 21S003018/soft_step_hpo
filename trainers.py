@@ -38,7 +38,7 @@ class CNNTrainer():
 
     def train(self):
         self.optimizer = torch.optim.SGD(
-            self.model.parameters(), lr=0.1, momentum=P_MOMENTUM)
+            self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
             self.optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
         opt_accu = -1
