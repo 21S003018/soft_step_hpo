@@ -100,7 +100,8 @@ class ResNet(nn.Module):
     def reset_parameters(self):
         return
 
+
 def resnet50():
     """ return a ResNet 50 object
     """
-    return ResNet(3,32,100,block=Bottleneck, num_blocks=[3, 4, 6, 3])
+    return ResNet(3, 32, 100, block=Bottleneck, num_blocks=[3, 4, 6, 3])
