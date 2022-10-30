@@ -1,11 +1,53 @@
 import torch.nn as nn
-from const import CIFAR10, MNIST
-from model.blocks.basic_block import SoftResidualBlock, SoftInvertedResidualBlock
 import json
+import torch.nn.functional as F
+from model.layers.softconv import SoftChannelConv2d, SoftKernelConv2d
 
+class Block(nn.Module):
+    def __init__(self) -> None:
+        super(Block, self).__init__()
+        return
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn2(self.conv2(out)))
+        out = self.bn3(self.conv3(out))
+        out += self.shortcut(x)
+        out = F.relu(out)
+        return out
+
+class SoftInvertedResidualBlock(Block):
+    expansion = 6
+
+    def __init__(self, inplanes, planes, kernel_size=3, stride=1, expansion=None):
+        super(SoftInvertedResidualBlock, self).__init__()
+        if not expansion:
+            self.expansion = expansion
+        hidden_planes = round(inplanes * self.expansion)
+
+        # pw
+        self.conv1 = SoftChannelConv2d(inplanes, hidden_planes,
+                               kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(hidden_planes)
+        # dw
+        self.conv2 = SoftKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
+                               stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+        self.bn2 = nn.BatchNorm2d(hidden_planes)
+        # pw-linear
+        self.conv3 = SoftChannelConv2d(hidden_planes, planes,
+                               kernel_size=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(planes)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or inplanes != hidden_planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(inplanes, planes,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(planes)
+            )
 
 class SoftStep(nn.Module):
-    def __init__(self, input_channel, ndim, num_classes, path=None, block=SoftResidualBlock) -> None:
+    def __init__(self, input_channel, ndim, num_classes, path=None, block=SoftInvertedResidualBlock) -> None:
         super(SoftStep, self).__init__()
         if path is None:
             block_input_channel = 32
@@ -16,7 +58,6 @@ class SoftStep(nn.Module):
         else:
             with open(path, 'r') as f:
                 struc = json.load(f)
-            block = eval(struc["block_type"])
             block_input_channel = struc["b0"]["conv_in"]
             self.conv_in = self.set_conv_in(
                 input_channel, block_input_channel, struc["b0"]["stride_in"])

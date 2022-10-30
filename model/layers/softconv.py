@@ -51,7 +51,6 @@ class SoftConv2d(nn.Module):
         x = F.conv2d(x, weight=masked_weight, stride=self.stride,padding=self.padding, groups=self.groups)
         return x
 
-
 class SoftChannelConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=None, groups=1):
         super(SoftChannelConv2d, self).__init__()

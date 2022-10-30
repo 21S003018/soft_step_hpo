@@ -21,8 +21,6 @@ MNISTSTD = (0.3081,)
 SVHNMEAN = (0.4376821219921112, 0.4437697231769562, 0.4728044271469116)
 SVHNSTD = (0.19803012907505035, 0.2010156363248825, 0.19703614711761475)
 
-# search range
-
 
 # """hyper-params"""
 P_MOMENTUM = 0.9
@@ -37,8 +35,8 @@ NAME2BATCHSIZE = {
 }
 # cnn model name
 RESNET = "ResNet"
-MOBILENET = "mobilenetv2"
-SHUFFLENET = "shufflenet"
+MOBILENET = "MobileNetV2"
+# nas model name
 SOFTSTEP = "SoftStep"
 
 # struc config

@@ -1,18 +1,14 @@
 import json
-import torch
-from torch.optim.adam import Adam
-from torch.optim.adamax import Adamax
-from const import *
-import torch.nn.functional as F
 import warnings
-from sklearn.metrics import precision_recall_fscore_support as metrics
 import numpy as np
-
+from sklearn.metrics import precision_recall_fscore_support as metrics
+import torch
+import torch.nn.functional as F
+from const import *
 from utils import Data, num_image
 from time import time
 from model.cnn_model.resnet import ResNet
-from model.cnn_model.mobilenet import mobilenetv2
-from model.cnn_model.shufflenet import shufflenet
+from model.cnn_model.mobilenet import MobileNetV2
 from model.nas_model.soft_step import SoftStep
 warnings.filterwarnings("ignore")
 
@@ -63,6 +59,8 @@ class CNNTrainer():
                 # self.save_model()
                 print(
                     f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
+            else:
+                print(f"Epoch~{i+1}->time:{round(time()-st_time,4)}")
             lr_schedular.step()
         return
 
@@ -178,10 +176,6 @@ class NasTrainer(CNNTrainer):
                 #     print(tmp)
                 # print()
             lr_schedular.step()
-        return
-
-    def train_cnn(self):
-        super().train()
         return
 
 
