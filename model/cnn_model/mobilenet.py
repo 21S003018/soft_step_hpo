@@ -152,12 +152,6 @@ class MobileNetV2(nn.Module):
         return
 
 
-def mobilenetv2(input_channel, inputdim, nclass):
-    """
-    Constructs a MobileNet V2 model
-    """
-    return MobileNetV2(num_classes=nclass)
-
 
 if __name__ == '__main__':
     print(_make_divisible(32, 8))
