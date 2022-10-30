@@ -19,11 +19,11 @@ class CNNTrainer():
     """
 
     def __init__(self, model_name, dataset) -> None:
-        # init data
+        # data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
-        self.num_image = num_image(self.train_loader)  # get num of image
-        # init model
+        self.num_image = num_image(self.train_loader)
+        # model
         self.model_name = model_name
         self.model = eval(self.model_name)(
             self.input_channel, self.inputdim, self.nclass)
@@ -34,7 +34,7 @@ class CNNTrainer():
 
     def train(self):
         self.optimizer = torch.optim.SGD(
-            self.model.parameters(), lr=0.1, momentum=P_MOMENTUM)
+            self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
             self.optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
         opt_accu = -1
@@ -246,7 +246,7 @@ class SoftStepTrainer(CNNTrainer):
                 # print()
             lr_schedular.step()
         return
-    
+
     def generate_struc(self):
         # prepare a body for struc
         with open(self.path, 'r') as f:
@@ -254,26 +254,28 @@ class SoftStepTrainer(CNNTrainer):
         blocks = []
         for block in net_struc["blocks"]:
             for _ in range(block["n"]):
-                blocks.append({"e":block["e"],"c":block["c"],"n":1,"k":block["k"],"s":block["s"]})
+                blocks.append(
+                    {"e": block["e"], "c": block["c"], "n": 1, "k": block["k"], "s": block["s"]})
         alphas = []
         for name, param in self.model.named_parameters():
             if name.__contains__('weight') or name.__contains__('bias'):
                 continue
             alphas.append(param.item())
         # print(alphas)
-        alphas = np.array(alphas).reshape((int(len(alphas)/3),3))
+        alphas = np.array(alphas).reshape((int(len(alphas)/3), 3))
         c_last = net_struc["b0"]["conv_in"]
         for i, alpha_item in enumerate(alphas):
             c1, k, c2 = alpha_item
             e = c1/c_last
             c = int(c2)
-            k = 2*max(int(k),0) + 1
+            k = 2*max(int(k), 0) + 1
             c_last = c2
-            blocks[i]["e"],blocks[i]["c"],blocks[i]["k"] = e,c,k
+            blocks[i]["e"], blocks[i]["c"], blocks[i]["k"] = e, c, k
         net_struc["blocks"] = blocks
         # with open("config/{}-softstep_opt.json".format(self.dataset), "w") as f:
         #     json.dump(net_struc,f)
         return net_struc
+
 
 if __name__ == "__main__":
     trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=SEARCHSPACE)

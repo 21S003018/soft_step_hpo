@@ -42,7 +42,7 @@ SOFTSTEP = "SoftStep"
 # struc config
 RESIDUALSPACE = "config/residual_cifar10.json"
 INVERTEDRESIDUALSPACE = "config/inverted_residual_imagenet.json"
-SEARCHSPACE = "config/inverted_residual_imagenet.json"
+SEARCHSPACE = "config/search_space.json"
 
 if __name__ == "__main__":
     pass
