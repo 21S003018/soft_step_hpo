@@ -94,6 +94,27 @@ class SoftStep(nn.Module):
             nn.ReLU6(inplace=True)
         )
 
+    def forward(self, x):
+        x = self.conv_in(x)
+        print(x.size())
+        x = self.blocks(x)
+        print(x.size())
+        x = self.conv_out(x)
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+
+    def model_parameters(self):
+        for name, param in self.named_parameters():
+            if name.__contains__("weight") or name.__contains__("bias"):
+                yield param
+
+    def arch_parameters(self):
+        for name, param in self.named_parameters():
+            if name.__contains__("base") or name.__contains__("controller"):
+                yield param
+
     def set_default_blocks(self, block, block_input_channel):
         self.cfgs = [
             # e, c, n, s
@@ -115,31 +136,6 @@ class SoftStep(nn.Module):
                 input_channel = output_channel
         blocks = nn.Sequential(*layers)
         return blocks, output_channel
-
-    def forward(self, x):
-        x = self.conv_in(x)
-        print(x.size())
-        x = self.blocks(x)
-        print(x.size())
-        x = self.conv_out(x)
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-        return x
-
-    def generate_struc(self):
-
-        return
-
-    def model_parameters(self):
-        for name, param in self.named_parameters():
-            if name.__contains__("weight") or name.__contains__("bias"):
-                yield param
-
-    def arch_parameters(self):
-        for name, param in self.named_parameters():
-            if name.__contains__("base") or name.__contains__("controller"):
-                yield param
 
 
 if __name__ == '__main__':

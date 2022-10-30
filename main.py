@@ -4,12 +4,15 @@ import torch
 
 
 if __name__ == "__main__":
-    # trainer = CNNTrainer(RESNET, CIFAR100)
+    trainer = CNNTrainer(RESNET, CIFAR100)
+    trainer.train()
+    trainer = CNNTrainer(RESNET, CIFAR10)
+    trainer.train()
     # trainer = CNNTrainer(MOBILENET, CIFAR100)
-    trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=SEARCHSPACE)
-    # trainer.train()
-    x = torch.randn((1, 3, 64, 64))
-    x = x.cuda(DEVICE)
-    preds = trainer.model(x)
-    # print(preds.size())
+    # trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=SEARCHSPACE)
+    # # trainer.train()
+    # x = torch.randn((1, 3, 32, 32))
+    # x = x.cuda(DEVICE)
+    # preds = trainer.model(x)
+    # # print(preds.size())
     pass

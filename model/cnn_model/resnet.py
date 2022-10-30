@@ -66,8 +66,8 @@ class ResNet(nn.Module):
     def __init__(self, input_channel, ndim, num_classes, block=BasicBlock, num_blocks=[2, 2, 2, 2]):
         super(ResNet, self).__init__()
         # resnet-50
-        # block = Bottleneck
-        # num_blocks = [3, 4, 6, 3]
+        block = Bottleneck
+        num_blocks = [3, 4, 6, 3]
         self.in_planes = 64
         self.conv1 = nn.Conv2d(input_channel, 64, kernel_size=3,
                                stride=1, padding=1, bias=False)

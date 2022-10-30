@@ -2,7 +2,7 @@
     "config_type": "nas",
     "b0": {
         "conv_in": 32,
-        "stride_in": 2,
+        "stride_in": 1,
         "conv_out": 1984
     },
     "block_type": "SoftInvertedResidualBlock",
