@@ -3,6 +3,7 @@ import json
 import torch.nn.functional as F
 from model.layers.softconv import SoftChannelConv2d, SoftKernelConv2d
 
+
 class Block(nn.Module):
     def __init__(self) -> None:
         super(Block, self).__init__()
@@ -16,6 +17,7 @@ class Block(nn.Module):
         out = F.relu(out)
         return out
 
+
 class SoftInvertedResidualBlock(Block):
     expansion = 6
 
@@ -27,15 +29,15 @@ class SoftInvertedResidualBlock(Block):
 
         # pw
         self.conv1 = SoftChannelConv2d(inplanes, hidden_planes,
-                               kernel_size=1, bias=False)
+                                       kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(hidden_planes)
         # dw
         self.conv2 = SoftKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                               stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+                                      stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
         # pw-linear
         self.conv3 = SoftChannelConv2d(hidden_planes, planes,
-                               kernel_size=1, bias=False)
+                                       kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
@@ -45,6 +47,7 @@ class SoftInvertedResidualBlock(Block):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes)
             )
+
 
 class SoftStep(nn.Module):
     def __init__(self, input_channel, ndim, num_classes, path=None, block=SoftInvertedResidualBlock) -> None:
@@ -115,7 +118,9 @@ class SoftStep(nn.Module):
 
     def forward(self, x):
         x = self.conv_in(x)
+        print(x.size())
         x = self.blocks(x)
+        print(x.size())
         x = self.conv_out(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
@@ -135,6 +140,7 @@ class SoftStep(nn.Module):
         for name, param in self.named_parameters():
             if name.__contains__("base") or name.__contains__("controller"):
                 yield param
+
 
 if __name__ == '__main__':
     # train_loader, test_loader, input_channel, inputdim, nclass = Data().get(CIFAR10)
