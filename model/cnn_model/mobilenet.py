@@ -89,7 +89,7 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
-    def __init__(self, num_classes=1000, width_mult=1.):
+    def __init__(self, num_classes=100, width_mult=1.):
         super(MobileNetV2, self).__init__()
         # setting of inverted residual blocks
         self.cfgs = [

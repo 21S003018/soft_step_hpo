@@ -96,9 +96,7 @@ class SoftStep(nn.Module):
 
     def forward(self, x):
         x = self.conv_in(x)
-        print(x.size())
         x = self.blocks(x)
-        print(x.size())
         x = self.conv_out(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
@@ -112,7 +110,7 @@ class SoftStep(nn.Module):
 
     def arch_parameters(self):
         for name, param in self.named_parameters():
-            if name.__contains__("base") or name.__contains__("controller"):
+            if name.__contains__("alpha"):
                 yield param
 
     def set_default_blocks(self, block, block_input_channel):
