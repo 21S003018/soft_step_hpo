@@ -53,7 +53,7 @@ class CNNTrainer():
                 self.optimizer.step()
                 loss_sum += loss.item() * len(imgs)/self.num_image
             # eval
-            val_accu, _, _, _, val_loss = self.val()
+            val_accu, val_loss = self.val()
             if val_accu > opt_accu:
                 opt_accu = val_accu
                 # self.save_model()
@@ -69,23 +69,17 @@ class CNNTrainer():
         ncorrect = 0
         nsample = 0
         valloss = 0
-        preds = []
-        Y = []
         for imgs, label in self.test_loader:
             if torch.cuda.is_available():
                 imgs = imgs.cuda(DEVICE)
                 label = label.cuda(DEVICE)
-            tmp_pred = self.model(imgs)
-            tmp = tmp_pred.detach().cpu().numpy()
-            preds.extend([np.argmax(tmp[i]) for i in range(len(tmp))])
-            Y.extend(label.detach().cpu().numpy())
-            ncorrect += torch.sum(tmp_pred.max(1)[1].eq(label).double())
+            preds = self.model(imgs)
+            ncorrect += torch.sum(preds.max(1)[1].eq(label).double())
             nsample += len(label)
-            loss = F.cross_entropy(tmp_pred, label)
+            loss = F.cross_entropy(preds, label)
             valloss += loss.item() * len(imgs)
-        p, r, f1, _ = metrics(preds, Y)
         valloss = valloss/nsample
-        return float((ncorrect/nsample).cpu()), p, r, f1, valloss
+        return float((ncorrect/nsample).cpu()), valloss
 
     def get_metrics(self):
         self.load_model()
@@ -164,7 +158,7 @@ class NasTrainer(CNNTrainer):
                     self.arch_optimizer.step()
                     loss_sum += loss.item() * len(imgs)/self.num_image
             # eval
-            val_accu, _, _, _, val_loss = self.val()
+            val_accu, val_loss = self.val()
             if val_accu > opt_accu:
                 self.save_model()
                 opt_accu = val_accu
@@ -193,7 +187,6 @@ class SoftStepTrainer(CNNTrainer):
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
-        self.flag = 0
         return
 
     def train(self):
@@ -201,50 +194,46 @@ class SoftStepTrainer(CNNTrainer):
             self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM)
         self.arch_optimizer = torch.optim.SGD(
             self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM)
-        lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
-            self.model_optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
+        # self.arch_optimizer = torch.optim.Adam(
+        #     self.model.arch_parameters(), lr=0.1)
+        arch_lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
+            self.arch_optimizer, milestones=[EPOCHS * 0.1], gamma=0.5)
         opt_accu = -1
         for i in range(EPOCHS):
             self.model.train()
             loss_sum = 0
             st_time = time()
-            if self.flag % 2 == 0:
-                # tune model params
-                for imgs, label in self.train_loader:
-                    if torch.cuda.is_available():
-                        imgs = imgs.cuda(DEVICE)
-                        label = label.cuda(DEVICE)
-                    preds = self.model(imgs)
-                    loss = F.cross_entropy(preds, label)
-                    self.model_optimizer.zero_grad()
-                    loss.backward()
-                    self.model_optimizer.step()
-                    loss_sum += loss.item() * len(imgs)/self.num_image
-            else:
-                # tune arch params
-                for imgs, label in self.train_loader:
-                    if torch.cuda.is_available():
-                        imgs = imgs.cuda(DEVICE)
-                        label = label.cuda(DEVICE)
-                    preds = self.model(imgs)
-                    loss = F.cross_entropy(preds, label)
-                    self.arch_optimizer.zero_grad()
-                    loss.backward()
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(DEVICE)
+                    label = label.cuda(DEVICE)
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                self.model_optimizer.zero_grad()
+                self.arch_optimizer.zero_grad()
+                loss.backward()
+                if i % 2 == 1:
                     self.arch_optimizer.step()
-                    loss_sum += loss.item() * len(imgs)/self.num_image
+                else:
+                    self.model_optimizer.step()
+                loss_sum += loss.item() * len(imgs)/self.num_image
             # eval
-            val_accu, _, _, _, val_loss = self.val()
+            val_accu, val_loss = self.val()
             if val_accu > opt_accu:
-                self.save_model()
+                # self.save_model()
                 opt_accu = val_accu
                 print(
                     f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
                 # # check arch params
-                # size_vectors = self.model.generate_size_vector()
-                # for tmp in size_vectors:
-                #     print(tmp)
-                # print()
-            lr_schedular.step()
+                # current_struc = self.generate_struc()
+                # with open(f"log/softstep/{i+1}.json", "w") as f:
+                #     json.dump(current_struc, f)
+            else:
+                print(f"Epoch~{i+1}->time:{round(time()-st_time,4)}")
+            arch_lr_schedular.step()
+            for name, param in self.model.named_parameters():
+                if name.__contains__("alpha"):
+                    print(name, param.grad)
         return
 
     def generate_struc(self):
@@ -253,9 +242,9 @@ class SoftStepTrainer(CNNTrainer):
             net_struc = json.load(f)
         blocks = []
         for block in net_struc["blocks"]:
-            for _ in range(block["n"]):
+            for i in range(block["n"]):
                 blocks.append(
-                    {"e": block["e"], "c": block["c"], "n": 1, "k": block["k"], "s": block["s"]})
+                    {"e": block["e"], "c": block["c"], "n": 1, "k": block["k"], "s": block["s"] if i == 0 else 1})
         alphas = []
         for name, param in self.model.named_parameters():
             if name.__contains__('weight') or name.__contains__('bias'):
@@ -265,6 +254,7 @@ class SoftStepTrainer(CNNTrainer):
         alphas = np.array(alphas).reshape((int(len(alphas)/3), 3))
         c_last = net_struc["b0"]["conv_in"]
         for i, alpha_item in enumerate(alphas):
+            print(alpha_item)
             c1, k, c2 = alpha_item
             e = c1/c_last
             c = int(c2)
