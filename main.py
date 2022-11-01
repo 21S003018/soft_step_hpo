@@ -4,10 +4,10 @@ import torch
 
 
 if __name__ == "__main__":
-    # trainer = CNNTrainer(RESNET, CIFAR100)
+    # trainer = CNNTrainer(MOBILENET, CIFAR100)
     # trainer.train()
-    # trainer = CNNTrainer(RESNET, CIFAR10)
-    # trainer.train()
+    trainer = CNNTrainer(MOBILENET, CIFAR10)
+    trainer.train()
 
     # trainer = CNNTrainer(MOBILENET, CIFAR100)
     # trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=SEARCHSPACE)
