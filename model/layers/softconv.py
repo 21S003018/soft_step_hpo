@@ -78,21 +78,22 @@ class SoftChannelConv2d(nn.Module):
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
 
         self.channel_alpha = Parameter(torch.Tensor(1))
-        self.expansion = 10
+        self.expansion = 2.5
         self.reset_parameters()
         return
 
     def reset_parameters(self):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        init.uniform_(self.channel_alpha, int(
-            self.out_channels*0.5), int(self.out_channels*0.75))
+        # init.uniform_(self.channel_alpha, int(
+        #     self.out_channels*0.5), int(self.out_channels*0.75))
+        init.uniform_(self.channel_alpha, 0.5, 0.75)
         return
 
     def sample_indicator(self, alpha, expansion, num):
         indexes = torch.FloatTensor(range(num))
         if torch.cuda.is_available():
             indexes = indexes.cuda(DEVICE)
-        return torch.sigmoid(expansion*(alpha-indexes))
+        return torch.sigmoid(expansion*self.out_channels*(alpha-indexes/self.out_channels))
 
     def forward(self, x):
         indicators = self.sample_indicator(
