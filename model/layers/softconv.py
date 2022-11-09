@@ -119,21 +119,20 @@ class SoftKernelConv2d(nn.Module):
         self.weight = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
         self.kernel_alpha = Parameter(torch.Tensor(1))
-        self.expansion = 10
+        self.expansion = 2.94
         self.reset_parameters()
         return
 
     def reset_parameters(self):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        init.uniform_(self.kernel_alpha, int(self.kernel_size/2)
-                      * 0.5, int(self.kernel_size/2)*0.75)
+        init.uniform_(self.kernel_alpha, 0.5, 0.75)
         return
 
     def sample_indicator(self, alpha, expansion, num):
         indexes = torch.FloatTensor(range(num))
         if torch.cuda.is_available():
             indexes = indexes.cuda(DEVICE)
-        return torch.sigmoid(expansion*(alpha-indexes))
+        return torch.sigmoid(expansion*num*(alpha-indexes/num))
 
     def forward(self, x):
         indicators = self.sample_indicator(
