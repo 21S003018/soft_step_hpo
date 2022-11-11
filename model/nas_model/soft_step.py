@@ -35,15 +35,13 @@ class SoftInvertedResidualBlock(nn.Module):
             )
 
     def forward(self, x):
-        out = F.relu6(self.conv1(x))
-        out = F.relu6(self.conv2(out))
-        # out = self.conv1(x)
-        # out = self.conv2(out)
+        out = F.relu6(self.bn1(self.conv1(x)))
+        out = F.relu6(self.bn2(self.conv2(out)))
         self.hidden_indicators = self.conv1.sample_indicator()
         out = torch.mul(out, self.hidden_indicators.reshape(
             (1, self.hidden_indicators.shape[0], 1, 1)))
 
-        out = self.conv3(out)
+        out = self.bn3(self.conv3(out))
         out = out + self.shortcut(x)
         out = F.relu6(out)
         self.outplane_indicators = self.conv3.sample_indicator()
