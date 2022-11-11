@@ -193,10 +193,10 @@ class SoftStepTrainer(CNNTrainer):
     def train(self):
         self.model_optimizer = torch.optim.SGD(
             self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
-        # self.arch_optimizer = torch.optim.SGD(
-        #     self.model.arch_parameters(), lr=0.5)
-        self.arch_optimizer = torch.optim.Adam(
-            self.model.arch_parameters(), lr=0.001)
+        self.arch_optimizer = torch.optim.SGD(
+            self.model.arch_parameters(), lr=0.5, momentum=P_MOMENTUM)
+        # self.arch_optimizer = torch.optim.Adam(
+        #     self.model.arch_parameters(), lr=0.001)
         arch_lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
             self.arch_optimizer, milestones=[EPOCHS * 0.1], gamma=0.5)
         opt_accu = -1
