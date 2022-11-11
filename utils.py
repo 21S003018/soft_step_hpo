@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import torch
 import pickle
+import math
 
 
 class Data():
@@ -78,6 +79,18 @@ class Data():
         if dataset == CIFAR100:
             return self.load_cifar100()
         return None
+
+
+def newton_expansion(c):
+    def f(x):
+        return 2*c*x-2-(math.exp(x/2) + math.exp(-x/2))
+
+    def f_derive(x):
+        return 2*c - (1/2*math.exp(x/2)-1/2*math.exp(-x/2))
+    x = 2*math.log(4*c)*1.1
+    for i in range(10):
+        x = x - f(x)/f_derive(x)
+    return x
 
 
 def num_image(loader):

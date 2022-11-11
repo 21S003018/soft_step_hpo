@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.metrics import precision_recall_fscore_support as metrics
 import torch
 import torch.nn.functional as F
+from torch import autograd
 from const import *
 from utils import Data, num_image
 from time import time
@@ -191,15 +192,15 @@ class SoftStepTrainer(CNNTrainer):
 
     def train(self):
         self.model_optimizer = torch.optim.SGD(
-            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM)
-        self.arch_optimizer = torch.optim.SGD(
-            self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM)
-        # self.arch_optimizer = torch.optim.Adam(
-        #     self.model.arch_parameters(), lr=0.1)
+            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        # self.arch_optimizer = torch.optim.SGD(
+        #     self.model.arch_parameters(), lr=0.5)
+        self.arch_optimizer = torch.optim.Adam(
+            self.model.arch_parameters(), lr=0.001)
         arch_lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
             self.arch_optimizer, milestones=[EPOCHS * 0.1], gamma=0.5)
         opt_accu = -1
-        for i in range(EPOCHS):
+        for i in range(EPOCHS*100):
             self.model.train()
             loss_sum = 0
             st_time = time()
@@ -211,29 +212,37 @@ class SoftStepTrainer(CNNTrainer):
                 loss = F.cross_entropy(preds, label)
                 self.model_optimizer.zero_grad()
                 self.arch_optimizer.zero_grad()
+                # # track internal variable's grad
+                # indicator_grad_8_conv1 = autograd.grad(
+                #     loss, self.model.blocks[8].hidden_indicators, retain_graph=True)[0]
+                # controller_grad_8_conv1 = []
+                # for indicator in self.model.blocks[8].hidden_indicators:
+                #     controller_grad_8_conv1.append(
+                #         autograd.grad(indicator, self.model.blocks[8].conv1.channel_alpha, retain_graph=True)[0])
+                # for j, indicator_grad in enumerate(indicator_grad_8_conv1):
+                #     print(j, self.model.blocks[8].hidden_indicators[j].item(), indicator_grad.item(),
+                #           controller_grad_8_conv1[j].item())
                 loss.backward()
                 if i % 2 == 1:
                     self.arch_optimizer.step()
                 else:
                     self.model_optimizer.step()
                 loss_sum += loss.item() * len(imgs)/self.num_image
+            # arch_lr_schedular.step()
             # eval
             val_accu, val_loss = self.val()
             if val_accu > opt_accu:
                 # self.save_model()
                 opt_accu = val_accu
-                print(
-                    f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
-                # # check arch params
-                # current_struc = self.generate_struc()
-                # with open(f"log/softstep/{i+1}.json", "w") as f:
-                #     json.dump(current_struc, f)
-            else:
-                print(f"Epoch~{i+1}->time:{round(time()-st_time,4)}")
-            arch_lr_schedular.step()
+            print(f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
+            # show arch params
             for name, param in self.model.named_parameters():
                 if name.__contains__("alpha"):
-                    print(name, param.grad)
+                    print(name, param.item(), param.grad.item())
+            # save arch params
+            current_struc = self.generate_struc()
+            with open(f"log/softstep/{i+1}.json", "w") as f:
+                json.dump(current_struc, f)
         return
 
     def generate_struc(self):
@@ -245,16 +254,11 @@ class SoftStepTrainer(CNNTrainer):
             for i in range(block["n"]):
                 blocks.append(
                     {"e": block["e"], "c": block["c"], "n": 1, "k": block["k"], "s": block["s"] if i == 0 else 1})
-        alphas = []
-        for name, param in self.model.named_parameters():
-            if name.__contains__('weight') or name.__contains__('bias'):
-                continue
-            alphas.append(param.item())
-        # print(alphas)
+        alphas = self.model.search_result_list()
+        alphas = list(alphas)
         alphas = np.array(alphas).reshape((int(len(alphas)/3), 3))
         c_last = net_struc["b0"]["conv_in"]
         for i, alpha_item in enumerate(alphas):
-            print(alpha_item)
             c1, k, c2 = alpha_item
             e = c1/c_last
             c = int(c2)
@@ -268,6 +272,6 @@ class SoftStepTrainer(CNNTrainer):
 
 
 if __name__ == "__main__":
-    trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=SEARCHSPACE)
+    trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=SEARCHSPACE)
     trainer.generate_struc()
     pass

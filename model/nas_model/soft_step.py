@@ -1,24 +1,11 @@
+import torch
 import torch.nn as nn
 import json
 import torch.nn.functional as F
-from model.layers.softconv import SoftChannelConv2d, SoftKernelConv2d
+from model.layers.softconv import SoftChannelConv2d, SoftChannelBatchNormConv2d, SoftKernelConv2d
 
 
-class Block(nn.Module):
-    def __init__(self) -> None:
-        super(Block, self).__init__()
-        return
-
-    def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
-        out = self.bn3(self.conv3(out))
-        out += self.shortcut(x)
-        out = F.relu(out)
-        return out
-
-
-class SoftInvertedResidualBlock(Block):
+class SoftInvertedResidualBlock(nn.Module):
     expansion = 6
 
     def __init__(self, inplanes, planes, kernel_size=3, stride=1, expansion=None):
@@ -46,6 +33,23 @@ class SoftInvertedResidualBlock(Block):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes)
             )
+
+    def forward(self, x):
+        out = F.relu6(self.conv1(x))
+        out = F.relu6(self.conv2(out))
+        # out = self.conv1(x)
+        # out = self.conv2(out)
+        self.hidden_indicators = self.conv1.sample_indicator()
+        out = torch.mul(out, self.hidden_indicators.reshape(
+            (1, self.hidden_indicators.shape[0], 1, 1)))
+
+        out = self.conv3(out)
+        out = out + self.shortcut(x)
+        out = F.relu6(out)
+        self.outplane_indicators = self.conv3.sample_indicator()
+        out = torch.mul(out, self.outplane_indicators.reshape(
+            (1, self.outplane_indicators.shape[0], 1, 1)))
+        return out
 
 
 class SoftStep(nn.Module):
@@ -102,6 +106,17 @@ class SoftStep(nn.Module):
         for name, param in self.named_parameters():
             if name.__contains__("alpha"):
                 yield param
+
+    def search_result_list(self):
+        for name, _ in self.named_parameters():
+            if name.__contains__("channel_alpha"):
+                segments = name.split(".")
+                layer = eval("self.blocks[int(segments[1])]."+segments[2])
+                yield min(layer.channel_alpha.item(), 1)*layer.out_channels
+            if name.__contains__("kernel_alpha"):
+                segments = name.split(".")
+                layer = eval("self.blocks[int(segments[1])]."+segments[2])
+                yield min(layer.kernel_alpha.item(), 1)*int(layer.kernel_size/2)
 
 
 if __name__ == '__main__':

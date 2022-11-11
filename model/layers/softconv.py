@@ -5,6 +5,7 @@ import torch.nn.init as init
 from const import *
 import torch
 import math
+import utils
 
 
 class SoftConv2d(nn.Module):
@@ -77,31 +78,75 @@ class SoftChannelConv2d(nn.Module):
         self.weight = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
 
-        self.channel_alpha = Parameter(torch.Tensor(1))
-        self.expansion = 2.5
+        self.channel_alpha = Parameter(torch.Tensor(1), requires_grad=True)
+        self.expansion = utils.newton_expansion(self.out_channels)
         self.reset_parameters()
         return
 
     def reset_parameters(self):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        # init.uniform_(self.channel_alpha, int(
-        #     self.out_channels*0.5), int(self.out_channels*0.75))
-        init.uniform_(self.channel_alpha, 0.5, 0.75)
+        init.uniform_(self.channel_alpha, 0.25, 0.5)
+        # init.uniform_(self.channel_alpha, 0.75, 0.9)
         return
 
-    def sample_indicator(self, alpha, expansion, num):
-        indexes = torch.FloatTensor(range(num))
+    def forward(self, x):
+        x = F.conv2d(x, weight=self.weight, stride=self.stride,
+                     padding=self.padding, groups=self.groups)
+        return x
+
+    def sample_indicator(self):
+        indexes = torch.FloatTensor(range(1, self.out_channels+1))
         if torch.cuda.is_available():
             indexes = indexes.cuda(DEVICE)
-        return torch.sigmoid(expansion*self.out_channels*(alpha-indexes/self.out_channels))
+        return torch.sigmoid(self.expansion*self.out_channels*(self.channel_alpha+self.controller_approx_delta()-indexes/self.out_channels))
 
-    def forward(self, x):
-        indicators = self.sample_indicator(
-            self.channel_alpha, self.expansion, self.out_channels)
-        masked_weight = torch.mul(
-            self.weight, indicators.reshape((indicators.shape[0], 1, 1, 1)))
-        x = F.conv2d(x, weight=masked_weight, stride=self.stride,
+    def controller_approx_delta(self):
+        if self.channel_alpha.data > 1:
+            init.uniform_(self.channel_alpha, 1, 1)
+        if self.channel_alpha.data < 1/self.out_channels:
+            init.uniform_(self.channel_alpha, 1 /
+                          self.out_channels, 1/self.out_channels)
+        real_controller = self.channel_alpha.data*self.out_channels
+        real_delta = 0.5-(real_controller - real_controller.floor())
+        unit_delta = real_delta/self.out_channels
+        return unit_delta
+
+
+class SoftChannelBatchNormConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=None, groups=1):
+        super(SoftChannelBatchNormConv2d, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.bias = bias
+        self.groups = groups
+
+        self.weight = Parameter(torch.Tensor(
+            out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
+
+        self.channel_alpha = Parameter(torch.Tensor(1), requires_grad=True)
+        self.expansion = utils.newton_expansion(self.out_channels)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.reset_parameters()
+        return
+
+    def reset_parameters(self):
+        self.bn.reset_parameters()
+        super().reset_parameters()
+        return
+
+    def forward(self, x, residual=None):
+        x = F.conv2d(x, weight=self.weight, stride=self.stride,
                      padding=self.padding, groups=self.groups)
+        x = self.bn(x)
+        self.indicators = self.sample_indicator(
+            self.channel_alpha, self.expansion, self.out_channels)
+        if residual != None:
+            x = x + residual
+        x = torch.mul(x, self.indicators.reshape(
+            (1, self.indicators.shape[0], 1, 1)))
         return x
 
 
@@ -119,20 +164,16 @@ class SoftKernelConv2d(nn.Module):
         self.weight = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
         self.kernel_alpha = Parameter(torch.Tensor(1))
-        self.expansion = 2.94
+        self.search_result = Parameter(torch.Tensor(1))
+        self.expansion = utils.newton_expansion(2*int(self.kernel_size/2))
         self.reset_parameters()
         return
 
     def reset_parameters(self):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        init.uniform_(self.kernel_alpha, 0.5, 0.75)
+        init.uniform_(self.kernel_alpha, 0.5, 0.6)
+        # init.uniform_(self.kernel_alpha, 0.6, 0.95)
         return
-
-    def sample_indicator(self, alpha, expansion, num):
-        indexes = torch.FloatTensor(range(num))
-        if torch.cuda.is_available():
-            indexes = indexes.cuda(DEVICE)
-        return torch.sigmoid(expansion*num*(alpha-indexes/num))
 
     def forward(self, x):
         indicators = self.sample_indicator(
@@ -141,9 +182,26 @@ class SoftKernelConv2d(nn.Module):
         if torch.cuda.is_available():
             mask = mask.cuda(DEVICE)
         for index, _ in enumerate(indicators):
-            mask[:self.kernel_size-index*2, :self.kernel_size -
-                 index*2] = indicators[int(self.kernel_size/2)-index-1]
+            mask[index:self.kernel_size-index, index:self.kernel_size -
+                 index] = indicators[int(self.kernel_size/2)-index-1]
         masked_weight = torch.mul(self.weight, mask)
         x = F.conv2d(x, weight=masked_weight, stride=self.stride,
                      padding=self.padding, groups=self.groups)
         return x
+
+    def sample_indicator(self, alpha, expansion, num):
+        indexes = torch.FloatTensor(range(1, num+1))
+        if torch.cuda.is_available():
+            indexes = indexes.cuda(DEVICE)
+        return torch.sigmoid(expansion*int(self.kernel_size/2)*(alpha+self.controller_approx_delta()-indexes/int(self.kernel_size/2)))
+
+    def controller_approx_delta(self):
+        if self.kernel_alpha.data > 1:
+            init.uniform_(self.kernel_alpha, 1, 1)
+        if self.kernel_alpha.data < 1/int(self.kernel_size/2):
+            init.uniform_(self.kernel_alpha, 1 /
+                          int(self.kernel_size/2), 1/int(self.kernel_size/2))
+        real_controller = self.kernel_alpha.data*int(self.kernel_size/2)
+        real_delta = 0.5-(real_controller - real_controller.floor())
+        unit_delta = real_delta/int(self.kernel_size/2)
+        return unit_delta
