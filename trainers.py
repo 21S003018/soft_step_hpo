@@ -8,8 +8,10 @@ from torch import autograd
 from const import *
 from utils import Data, num_image
 from time import time
+from torchstat import stat
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
+from model.cnn_model.eval import Eval
 from model.nas_model.soft_step import SoftStep
 warnings.filterwarnings("ignore")
 
@@ -31,9 +33,13 @@ class CNNTrainer():
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
+        self.save=False
         pass
 
-    def train(self):
+    def train(self,load=False,save=False):
+        if load:
+            self.load_model()
+        self.save=save
         self.optimizer = torch.optim.SGD(
             self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
@@ -57,7 +63,8 @@ class CNNTrainer():
             val_accu, val_loss = self.val()
             if val_accu > opt_accu:
                 opt_accu = val_accu
-                # self.save_model()
+                if self.save:
+                    self.save_model()
                 print(
                     f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
             else:
@@ -82,20 +89,6 @@ class CNNTrainer():
         valloss = valloss/nsample
         return float((ncorrect/nsample).cpu()), valloss
 
-    def get_metrics(self):
-        self.load_model()
-        self.model.eval()
-        ncorrect = 0
-        nsample = 0
-        for imgs, label in self.test_loader:
-            if torch.cuda.is_available():
-                imgs = imgs.cuda(DEVICE)
-                label = label.cuda(DEVICE)
-            preds = self.model(imgs)
-            ncorrect += torch.sum(preds.max(1)[1].eq(label).double())
-            nsample += len(label)
-        return float((ncorrect/nsample).cpu())
-
     def save_model(self):
         torch.save(self.model.state_dict(), self.save_model_path)
         return
@@ -104,6 +97,24 @@ class CNNTrainer():
         state_dict = torch.load(self.save_model_path)
         self.model.load_state_dict(state_dict)
         return
+
+class EvalTrainer():
+    """
+    specify for a dataset and a model
+    """
+
+    def __init__(self, dataset, path=None) -> None:
+        # data
+        self.dataset = dataset
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
+        # model
+        self.model = Eval(self.input_channel,self.inputdim,self.nclass,path)
+        if torch.cuda.is_available():
+            self.model.cuda(DEVICE)
+        path_item = path.split("/")[-1]
+        self.save_model_path = f"ckpt/{path_item}_{dataset}"
+        pass
 
 
 class NasTrainer(CNNTrainer):
@@ -272,6 +283,8 @@ class SoftStepTrainer(CNNTrainer):
 
 
 if __name__ == "__main__":
-    trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=SEARCHSPACE)
-    trainer.generate_struc()
+    trainer = EvalTrainer(CIFAR10, path=SEARCHSPACE)
+    print(stat(trainer.model,(3,32,32)))
+    # trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=SEARCHSPACE)
+    # trainer.generate_struc()
     pass
