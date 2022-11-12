@@ -98,7 +98,7 @@ class CNNTrainer():
         self.model.load_state_dict(state_dict)
         return
 
-class EvalTrainer():
+class EvalTrainer(CNNTrainer):
     """
     specify for a dataset and a model
     """
@@ -283,8 +283,12 @@ class SoftStepTrainer(CNNTrainer):
 
 
 if __name__ == "__main__":
-    trainer = EvalTrainer(CIFAR10, path=SEARCHSPACE)
+    trainer = EvalTrainer(CIFAR100, path=SEARCHSPACE)
     print(stat(trainer.model,(3,32,32)))
+
+    # trainer = CNNTrainer(MOBILENET,CIFAR100)
+    # print(stat(trainer.model,(3,32,32)))
+
     # trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=SEARCHSPACE)
     # trainer.generate_struc()
     pass
