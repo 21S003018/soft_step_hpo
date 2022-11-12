@@ -1,6 +1,6 @@
 from model.blocks.basic_block import SoftResidualBlock
 from model.cnn_model.resnet import ResNet
-from model.nas_model.soft_step import SoftStep
+from model.nas_model.softstep import SoftStep
 # from utils import Data
 from const import *
 import torch

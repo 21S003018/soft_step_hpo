@@ -2,7 +2,55 @@ import torch
 import torch.nn as nn
 import json
 import torch.nn.functional as F
-from model.layers.softconv import SoftChannelConv2d, SoftChannelBatchNormConv2d, SoftKernelConv2d
+from model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
+
+
+class SoftResidualBlock(nn.Module):
+    expansion = 4
+
+    def __init__(self, inplanes, hidden_planes, kernel_size=3, stride=1, expansion=None):
+        super(SoftInvertedResidualBlock, self).__init__()
+        if not expansion:
+            self.expansion = expansion
+        out_planes = self.expansion*hidden_planes
+        self.conv1 = SoftChannelConv2d(
+            inplanes, hidden_planes, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(hidden_planes)
+
+        self.conv2 = SoftConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
+                                stride=stride, padding=int(kernel_size/2), bias=False)
+        self.bn2 = nn.BatchNorm2d(hidden_planes)
+
+        self.conv3 = SoftChannelConv2d(hidden_planes, out_planes,
+                                       kernel_size=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(out_planes)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or inplanes != hidden_planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(inplanes, out_planes,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(out_planes)
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        self.conv1_indicators = self.conv1.sample_indicator()
+        out = torch.mul(out, self.conv1_indicators.reshape(
+            (1, self.conv1_indicators.shape[0], 1, 1)))
+
+        out = F.relu(self.bn2(self.conv2(out)))
+        self.conv2_indicators = self.conv2.sample_channel_indicator()
+        out = torch.mul(out, self.conv2_indicators.reshape(
+            (1, self.conv2_indicators.shape[0], 1, 1)))
+
+        out = self.bn3(self.conv3(out))
+        out = out + self.shortcut(x)
+        out = F.relu(out)
+        self.conv3_indicators = self.conv3.sample_indicator()
+        out = torch.mul(out, self.conv3_indicators.reshape(
+            (1, self.conv3_indicators.shape[0], 1, 1)))
+        return out
 
 
 class SoftInvertedResidualBlock(nn.Module):
@@ -55,6 +103,7 @@ class SoftStep(nn.Module):
         super(SoftStep, self).__init__()
         with open(path, 'r') as f:
             struc = json.load(f)
+        block = eval(struc["block_type"])
         output_channel = struc["b0"]["conv_in"]
         self.conv_in = nn.Sequential(
             nn.Conv2d(input_channel, output_channel,
