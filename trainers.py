@@ -283,7 +283,7 @@ class SoftStepTrainer(CNNTrainer):
 
 
 if __name__ == "__main__":
-    trainer = EvalTrainer(CIFAR100, path='config/softstep_eval.json')
+    trainer = EvalTrainer(CIFAR100, path='config/softstep_eval_l1.json')
     print(stat(trainer.model,(3,32,32)))
 
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
