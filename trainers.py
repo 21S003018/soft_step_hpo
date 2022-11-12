@@ -12,7 +12,7 @@ from torchstat import stat
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
 from model.cnn_model.eval import Eval
-from model.nas_model.soft_step import SoftStep
+from model.nas_model.softstep import SoftStep
 warnings.filterwarnings("ignore")
 
 
@@ -33,13 +33,11 @@ class CNNTrainer():
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
-        self.save=False
         pass
 
-    def train(self,load=False,save=False):
+    def train(self, load=False, save=False):
         if load:
             self.load_model()
-        self.save=save
         self.optimizer = torch.optim.SGD(
             self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
@@ -63,7 +61,7 @@ class CNNTrainer():
             val_accu, val_loss = self.val()
             if val_accu > opt_accu:
                 opt_accu = val_accu
-                if self.save:
+                if save:
                     self.save_model()
                 print(
                     f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
@@ -98,6 +96,7 @@ class CNNTrainer():
         self.model.load_state_dict(state_dict)
         return
 
+
 class EvalTrainer(CNNTrainer):
     """
     specify for a dataset and a model
@@ -109,7 +108,7 @@ class EvalTrainer(CNNTrainer):
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
         # model
-        self.model = Eval(self.input_channel,self.inputdim,self.nclass,path)
+        self.model = Eval(self.input_channel, self.inputdim, self.nclass, path)
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
         path_item = path.split("/")[-1]
@@ -186,32 +185,29 @@ class NasTrainer(CNNTrainer):
 
 
 class SoftStepTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None) -> None:
-        # load data
+    def __init__(self, model_name, dataset, path=None, opt_order=1) -> None:
+        # config
+        self.path = path
+        self.model_name = model_name
         self.dataset = dataset
+        self.order = opt_order
+        # load data
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
         # init model
-        self.path = path
-        self.model_name = model_name
         self.model = SoftStep(self.input_channel,
                               self.inputdim, self.nclass, path=path)
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
-        self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         return
 
     def train(self):
         self.model_optimizer = torch.optim.SGD(
             self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         self.arch_optimizer = torch.optim.SGD(
-            self.model.arch_parameters(), lr=0.5, momentum=P_MOMENTUM)
-        # self.arch_optimizer = torch.optim.Adam(
-        #     self.model.arch_parameters(), lr=0.001)
-        arch_lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
-            self.arch_optimizer, milestones=[EPOCHS * 0.1], gamma=0.5)
+            self.model.arch_parameters(), lr=0.5, momentum=P_MOMENTUM, weight_decay=1e-5)
         opt_accu = -1
-        for i in range(EPOCHS*100):
+        for i in range(EPOCHS*2):
             self.model.train()
             loss_sum = 0
             st_time = time()
@@ -223,36 +219,26 @@ class SoftStepTrainer(CNNTrainer):
                 loss = F.cross_entropy(preds, label)
                 self.model_optimizer.zero_grad()
                 self.arch_optimizer.zero_grad()
-                # # track internal variable's grad
-                # indicator_grad_8_conv1 = autograd.grad(
-                #     loss, self.model.blocks[8].hidden_indicators, retain_graph=True)[0]
-                # controller_grad_8_conv1 = []
-                # for indicator in self.model.blocks[8].hidden_indicators:
-                #     controller_grad_8_conv1.append(
-                #         autograd.grad(indicator, self.model.blocks[8].conv1.channel_alpha, retain_graph=True)[0])
-                # for j, indicator_grad in enumerate(indicator_grad_8_conv1):
-                #     print(j, self.model.blocks[8].hidden_indicators[j].item(), indicator_grad.item(),
-                #           controller_grad_8_conv1[j].item())
                 loss.backward()
-                if i % 2 == 1:
+                if i % (self.order+1) == self.order:
                     self.arch_optimizer.step()
                 else:
                     self.model_optimizer.step()
                 loss_sum += loss.item() * len(imgs)/self.num_image
-            # arch_lr_schedular.step()
+            ed_time = time()
             # eval
             val_accu, val_loss = self.val()
             if val_accu > opt_accu:
-                # self.save_model()
                 opt_accu = val_accu
-            print(f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
+            # show epoch training message
+            print(f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
             # show arch params
             for name, param in self.model.named_parameters():
                 if name.__contains__("alpha"):
                     print(name, param.item(), param.grad.item())
             # save arch params
             current_struc = self.generate_struc()
-            with open(f"log/softstep/{i+1}.json", "w") as f:
+            with open(f"log/softstep/{i+1}_o{self.order}_{self.dataset}.json", "w") as f:
                 json.dump(current_struc, f)
         return
 
@@ -283,8 +269,9 @@ class SoftStepTrainer(CNNTrainer):
 
 
 if __name__ == "__main__":
-    trainer = EvalTrainer(CIFAR100, path=SEARCHSPACE)
-    print(stat(trainer.model,(3,32,32)))
+    trainer = EvalTrainer(CIFAR10, path='log/softstep/361.json')
+    # trainer = EvalTrainer(CIFAR100, path=SEARCHSPACE)
+    print(stat(trainer.model, (3, 32, 32)))
 
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
     # print(stat(trainer.model,(3,32,32)))

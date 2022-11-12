@@ -40,8 +40,8 @@ MOBILENET = "MobileNetV2"
 SOFTSTEP = "SoftStep"
 
 # struc config
-RESIDUALSPACE = "config/residual_cifar10.json"
-INVERTEDRESIDUALSPACE = "config/inverted_residual_imagenet.json"
+BOTTLENECKSEARCHSPACE = "config/search_space_bottleneck.json"
+LINEARSEARCHSPACE = "config/search_space_linear.json"
 SEARCHSPACE = "config/search_space.json"
 
 if __name__ == "__main__":

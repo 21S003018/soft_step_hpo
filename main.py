@@ -1,4 +1,4 @@
-from trainers import CNNTrainer, NasTrainer, SoftStepTrainer
+from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer
 from const import *
 import torch
 
@@ -8,12 +8,13 @@ if __name__ == "__main__":
     # trainer.train()
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
+    # trainer = EvalTrainer(CIFAR10, "config/softstep_linear_cifar10_o1_l1.json")
+    # trainer.train()
 
-    # trainer = CNNTrainer(MOBILENET, CIFAR100)
-    trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=SEARCHSPACE)
+    trainer = SoftStepTrainer(
+        SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=1)
     trainer.train()
-    # x = torch.randn((1, 3, 32, 32))
-    # x = x.cuda(DEVICE)
-    # preds = trainer.model(x)
-    # # print(preds.size())
+    trainer = SoftStepTrainer(
+        SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=2)
+    trainer.train()
     pass
