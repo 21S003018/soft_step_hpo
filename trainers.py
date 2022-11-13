@@ -34,7 +34,7 @@ class CNNTrainer():
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         pass
 
-    def train(self, load=False, save=False):
+    def train(self, load=False, save=False, epochs=EPOCHS):
         if load:
             self.load_model()
         self.optimizer = torch.optim.SGD(
@@ -42,7 +42,7 @@ class CNNTrainer():
         lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
             self.optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
         opt_accu = -1
-        for i in range(EPOCHS):
+        for i in range(epochs):
             self.model.train()
             loss_sum = 0
             st_time = time()
@@ -93,7 +93,7 @@ class CNNTrainer():
             torch.save(self.model.state_dict(), self.save_model_path)
         return
 
-    def load_model(self, path):
+    def load_model(self, path=None):
         if path:
             state_dict = torch.load(path)
         else:
@@ -107,7 +107,7 @@ class EvalTrainer(CNNTrainer):
     specify for a dataset and a model
     """
 
-    def __init__(self, dataset, path=None) -> None:
+    def __init__(self, dataset, path: str = None) -> None:
         # data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
@@ -117,7 +117,8 @@ class EvalTrainer(CNNTrainer):
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
         path_item = path.split("/")[-1]
-        self.save_model_path = f"ckpt/{path_item}_{dataset}"
+        path_item = path_item.replace(".json", "")
+        self.save_model_path = f"ckpt/{path_item}_{dataset}.pkl"
         pass
 
 
