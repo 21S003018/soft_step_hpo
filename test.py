@@ -1,4 +1,4 @@
-from model.blocks.basic_block import SoftResidualBlock
+from model.basicblocks import SoftResidualBlock
 from model.cnn_model.resnet import ResNet
 from model.nas_model.softstep import SoftStep
 # from utils import Data
@@ -10,7 +10,7 @@ import torch.nn.init as init
 # from torchsummary import summary
 # from pthflops import count_opss
 # from trainers import CNNTrainer, NasTrainer
-from model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
+from model.nas_model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
 from model.cnn_model.mobilenet import MobileNetV2
 import json
 import torch.nn as nn

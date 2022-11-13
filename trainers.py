@@ -1,7 +1,6 @@
 import json
 import warnings
 import numpy as np
-from sklearn.metrics import precision_recall_fscore_support as metrics
 import torch
 import torch.nn.functional as F
 from torch import autograd
@@ -87,12 +86,18 @@ class CNNTrainer():
         valloss = valloss/nsample
         return float((ncorrect/nsample).cpu()), valloss
 
-    def save_model(self):
-        torch.save(self.model.state_dict(), self.save_model_path)
+    def save_model(self, path=None):
+        if path:
+            torch.save(self.model.state_dict(), path)
+        else:
+            torch.save(self.model.state_dict(), self.save_model_path)
         return
 
-    def load_model(self):
-        state_dict = torch.load(self.save_model_path)
+    def load_model(self, path):
+        if path:
+            state_dict = torch.load(path)
+        else:
+            state_dict = torch.load(self.save_model_path)
         self.model.load_state_dict(state_dict)
         return
 

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import json
 import torch.nn.functional as F
-from model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
+from model.nas_model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
 
 
 class SoftResidualBlock(nn.Module):
@@ -103,7 +103,7 @@ class SoftStep(nn.Module):
         super(SoftStep, self).__init__()
         with open(path, 'r') as f:
             struc = json.load(f)
-        block = eval(struc["block_type"])
+        block = SoftInvertedResidualBlock if struc["block_type"] == "linear" else SoftResidualBlock
         output_channel = struc["b0"]["conv_in"]
         self.conv_in = nn.Sequential(
             nn.Conv2d(input_channel, output_channel,
