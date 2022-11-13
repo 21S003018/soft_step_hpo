@@ -5,7 +5,7 @@
         "stride_in": 1,
         "conv_out": 512
     },
-    "block_type": "SoftInvertedResidualBlock",
+    "block_type": "linear",
     "blocks": [
         {
             "e": 2,
