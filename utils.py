@@ -3,10 +3,11 @@ import sklearn.preprocessing as sp
 from sklearn.model_selection import train_test_split
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
-import numpy as np
 import torch
-import pickle
 import math
+import re
+import pickle
+import numpy as np
 
 
 class Data():
@@ -98,3 +99,30 @@ def num_image(loader):
     for _, label in loader:
         res += len(label)
     return res
+
+
+def analyse_trainloss(path, order=1):
+    pattern_trainloss = re.compile("train_loss:(\d.\d+),")
+    pattern_valaccu = re.compile("val_accu:(\d.\d+),")
+    data = []
+    with open(path, 'r') as f:
+        for line in f.readlines():
+            if line.__contains__("Epoch"):
+                data.append((re.findall(pattern_trainloss, line)[
+                            0], re.findall(pattern_valaccu, line)[0]))
+    data = np.array(data)
+    data = np.insert(data, [0], np.array(
+        range(1, len(data)+1)).reshape(len(data), 1), axis=1)
+    data = data[order:int((len(data)-order)/(order+1))*(order+1)+order, :]
+    data = np.reshape(data, (int(len(data)/(order+1)), 3*(order+1)))
+    data = data.tolist()
+    data = sorted(data, key=lambda x: x[-2], reverse=True)
+    for tmp in data:
+        print(tmp)
+    return
+
+
+if __name__ == "__main__":
+    analyse_trainloss("log/cifar10_softstep_linear.log", order=2)
+    # analyse_trainloss("log/softstep_linear_o1_cifar10.log")
+    pass
