@@ -61,6 +61,7 @@ class SoftInvertedResidualBlock(nn.Module):
         if not expansion:
             self.expansion = expansion
         hidden_planes = round(inplanes * self.expansion)
+        self.arch_opt = False
 
         self.conv1 = SoftChannelConv2d(
             inplanes, hidden_planes, kernel_size=1, bias=False)
@@ -83,18 +84,25 @@ class SoftInvertedResidualBlock(nn.Module):
             )
 
     def forward(self, x):
-        out = F.relu6(self.bn1(self.conv1(x)))
-        out = F.relu6(self.bn2(self.conv2(out)))
-        self.hidden_indicators = self.conv1.sample_indicator()
-        out = torch.mul(out, self.hidden_indicators.reshape(
-            (1, self.hidden_indicators.shape[0], 1, 1)))
+        if self.arch_opt:
+            out = F.relu6(self.bn1(self.conv1(x)))
+            out = F.relu6(self.bn2(self.conv2(out)))
+            out = torch.mul(out, self.conv1.channel_indicators)
 
-        out = self.bn3(self.conv3(out))
-        out = out + self.shortcut(x)
-        out = F.relu6(out)
-        self.outplane_indicators = self.conv3.sample_indicator()
-        out = torch.mul(out, self.outplane_indicators.reshape(
-            (1, self.outplane_indicators.shape[0], 1, 1)))
+            out = self.bn3(self.conv3(out))
+            out = out + self.shortcut(x)
+            out = F.relu6(out)
+            out = torch.mul(out, self.conv3.channel_indicators)
+            self.arch_opt = False
+        else:
+            out = F.relu6(self.bn1(self.conv1(x)))
+            out = F.relu6(self.bn2(self.conv2(out, False)))
+            out = torch.mul(out, self.conv1.channel_indicators.data)
+
+            out = self.bn3(self.conv3(out))
+            out = out + self.shortcut(x)
+            out = F.relu6(out)
+            out = torch.mul(out, self.conv3.channel_indicators.data)
         return out
 
 
@@ -103,7 +111,8 @@ class SoftStep(nn.Module):
         super(SoftStep, self).__init__()
         with open(path, 'r') as f:
             struc = json.load(f)
-        block = SoftInvertedResidualBlock if struc["block_type"] == "linear" else SoftResidualBlock
+        self.block_type = struc["block_type"]
+        block = SoftInvertedResidualBlock if self.block_type == "linear" else SoftResidualBlock
         output_channel = struc["b0"]["conv_in"]
         self.conv_in = nn.Sequential(
             nn.Conv2d(input_channel, output_channel,
@@ -135,7 +144,9 @@ class SoftStep(nn.Module):
         self.fc = nn.Linear(output_channel, num_classes)
         return
 
-    def forward(self, x):
+    def forward(self, x, arch_opt=False):
+        if arch_opt:
+            self.update_indicators()
         x = self.conv_in(x)
         x = self.blocks(x)
         x = self.conv_out(x)
@@ -164,6 +175,16 @@ class SoftStep(nn.Module):
                 segments = name.split(".")
                 layer = eval("self.blocks[int(segments[1])]."+segments[2])
                 yield min(layer.kernel_alpha.item(), 1)*int(layer.kernel_size/2)
+
+    def update_indicators(self):
+        for conv_block in self.blocks:
+            conv_block.arch_opt = True
+            conv_block.conv1.update_channel_indicators()
+            conv_block.conv2.update_kernel_mask()
+            conv_block.conv3.update_channel_indicators()
+            if self.block_type == "bottleneck":
+                conv_block.conv2.update_channel_indicators()
+        return
 
 
 if __name__ == '__main__':

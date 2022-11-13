@@ -205,6 +205,7 @@ class SoftStepTrainer(CNNTrainer):
                               self.inputdim, self.nclass, path=path)
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
+        self.model.update_indicators()
         return
 
     def train(self):
@@ -221,7 +222,7 @@ class SoftStepTrainer(CNNTrainer):
                 if torch.cuda.is_available():
                     imgs = imgs.cuda(DEVICE)
                     label = label.cuda(DEVICE)
-                preds = self.model(imgs)
+                preds = self.model(imgs, i % (self.order+1) == self.order)
                 loss = F.cross_entropy(preds, label)
                 self.model_optimizer.zero_grad()
                 self.arch_optimizer.zero_grad()
@@ -276,7 +277,7 @@ class SoftStepTrainer(CNNTrainer):
 
 if __name__ == "__main__":
     trainer = EvalTrainer(CIFAR100, path='config/softstep_eval_decay5.json')
-    print(stat(trainer.model,(3,32,32)))
+    print(stat(trainer.model, (3, 32, 32)))
 
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
     # print(stat(trainer.model,(3,32,32)))

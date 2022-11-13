@@ -29,6 +29,9 @@ class SoftConv2d(nn.Module):
         self.kernel_alpha_expansion = utils.newton_expansion(
             2*int(self.kernel_size/2))
         self.reset_parameters()
+        # init channel indicators and kernel mask
+        self.channel_indicators = None
+        self.mask = None
         pass
 
     def reset_parameters(self):
@@ -69,6 +72,11 @@ class SoftConv2d(nn.Module):
         unit_delta = real_delta/self.out_channels
         return unit_delta
 
+    def update_channel_indicators(self):
+        self.channel_indicators = self.sample_channel_indicator().reshape(
+            (1, self.out_channels, 1, 1))
+        return
+
     def sample_kernel_indicator(self):
         indexes = torch.FloatTensor(range(1, int(self.kernel_size/2)+1))
         if torch.cuda.is_available():
@@ -85,6 +93,16 @@ class SoftConv2d(nn.Module):
         real_delta = 0.5-(real_controller - real_controller.floor())
         unit_delta = real_delta/int(self.kernel_size/2)
         return unit_delta
+
+    def update_kernel_mask(self):
+        indicators = self.sample_kernel_indicator()
+        self.mask = torch.ones((self.kernel_size, self.kernel_size))
+        if torch.cuda.is_available():
+            self.mask = self.mask.cuda(DEVICE)
+        for index, _ in enumerate(indicators):
+            self.mask[index:self.kernel_size-index, index:self.kernel_size -
+                      index] = indicators[int(self.kernel_size/2)-index-1]
+        return
 
 
 class SoftChannelConv2d(nn.Module):
@@ -104,14 +122,14 @@ class SoftChannelConv2d(nn.Module):
         self.channel_alpha = Parameter(torch.Tensor(1), requires_grad=True)
         self.expansion = utils.newton_expansion(self.out_channels)
         self.reset_parameters()
+        # init channel indicators
+        self.channel_indicators = None
         return
 
     def reset_parameters(self):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         init.uniform_(self.channel_alpha, 1-1 /
                       self.out_channels, 1-1/self.out_channels)
-        # init.uniform_(self.channel_alpha, 0.25, 0.5)
-        # init.uniform_(self.channel_alpha, 0.75, 0.9)
         return
 
     def forward(self, x):
@@ -136,6 +154,11 @@ class SoftChannelConv2d(nn.Module):
         unit_delta = real_delta/self.out_channels
         return unit_delta
 
+    def update_channel_indicators(self):
+        self.channel_indicators = self.sample_indicator().reshape(
+            (1, self.out_channels, 1, 1))
+        return
+
 
 class SoftKernelConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=None, groups=1):
@@ -153,25 +176,21 @@ class SoftKernelConv2d(nn.Module):
         self.kernel_alpha = Parameter(torch.Tensor(1))
         self.expansion = utils.newton_expansion(2*int(self.kernel_size/2))
         self.reset_parameters()
+        # init kernel mask
+        self.mask = None
         return
 
     def reset_parameters(self):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         init.uniform_(self.kernel_alpha, 1-1 /
                       int(self.kernel_size/2), 1-1/int(self.kernel_size/2))
-        # init.uniform_(self.kernel_alpha, 0.5, 0.6)
-        # init.uniform_(self.kernel_alpha, 0.6, 0.95)
         return
 
-    def forward(self, x):
-        indicators = self.sample_indicator()
-        mask = torch.ones((self.kernel_size, self.kernel_size))
-        if torch.cuda.is_available():
-            mask = mask.cuda(DEVICE)
-        for index, _ in enumerate(indicators):
-            mask[index:self.kernel_size-index, index:self.kernel_size -
-                 index] = indicators[int(self.kernel_size/2)-index-1]
-        masked_weight = torch.mul(self.weight, mask)
+    def forward(self, x, arch_opt=True):
+        if arch_opt:
+            masked_weight = torch.mul(self.weight, self.mask)
+        else:
+            masked_weight = torch.mul(self.weight, self.mask.data)
         x = F.conv2d(x, weight=masked_weight, stride=self.stride,
                      padding=self.padding, groups=self.groups)
         return x
@@ -192,3 +211,13 @@ class SoftKernelConv2d(nn.Module):
         real_delta = 0.5-(real_controller - real_controller.floor())
         unit_delta = real_delta/int(self.kernel_size/2)
         return unit_delta
+
+    def update_kernel_mask(self):
+        indicators = self.sample_indicator()
+        self.mask = torch.ones((self.kernel_size, self.kernel_size))
+        if torch.cuda.is_available():
+            self.mask = self.mask.cuda(DEVICE)
+        for index, _ in enumerate(indicators):
+            self.mask[index:self.kernel_size-index, index:self.kernel_size -
+                      index] = indicators[int(self.kernel_size/2)-index-1]
+        return
