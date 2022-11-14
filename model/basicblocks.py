@@ -37,13 +37,11 @@ class ResidualBlock(Block):
                                kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
-        self.shortcut = nn.Sequential()
-        if stride != 1 or inplanes != hidden_planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(inplanes, out_planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_planes)
-            )
+        self.shortcut = nn.Sequential(
+            nn.Conv2d(inplanes, out_planes,
+                        kernel_size=1, stride=stride, bias=False),
+            nn.BatchNorm2d(out_planes)
+        )
 
 
 class InvertedResidualBlock(Block):
@@ -68,13 +66,11 @@ class InvertedResidualBlock(Block):
                                kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes)
 
-        self.shortcut = nn.Sequential()
-        if stride != 1 or inplanes != hidden_planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(inplanes, planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes)
-            )
+        self.shortcut = nn.Sequential(
+            nn.Conv2d(inplanes, planes,
+                        kernel_size=1, stride=stride, bias=False),
+            nn.BatchNorm2d(planes)
+        )
 
 
 if __name__ == '__main__':

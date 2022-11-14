@@ -116,13 +116,13 @@ def analyse_trainloss(path, order=1):
     data = data[order:int((len(data)-order)/(order+1))*(order+1)+order, :]
     data = np.reshape(data, (int(len(data)/(order+1)), 3*(order+1)))
     data = data.tolist()
-    data = sorted(data, key=lambda x: x[-2], reverse=True)
+    data = sorted(data, key=lambda x: x[-1], reverse=False)
     for tmp in data:
         print(tmp)
     return
 
 
 if __name__ == "__main__":
-    analyse_trainloss("log/cifar10_softstep_linear.log", order=2)
+    analyse_trainloss("log/softstep_linear_o2_cifar10.log", order=2)
     # analyse_trainloss("log/softstep_linear_o1_cifar10.log")
     pass

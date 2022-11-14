@@ -6,7 +6,8 @@ import torch
 def softstep_eval(order=1, dataset=CIFAR10):
     config_path = "log/softstep/{}_o{}_{}.json"
     if order == 1:
-        indexs = [316, 324, 330, 332, 386, 392]  # linear,o1,cifar10
+        indexs = [323, 357, 367, 315, 391]  # linear,o1,cifar10, according to w train loss
+        # indexs = [316, 324, 330, 332, 386, 392]  # linear,o1,cifar10, according to accu
     elif order == 2:
         indexs = [396, 394, 330, 376, 339]  # linear,o2,cifar10
     for index in indexs:

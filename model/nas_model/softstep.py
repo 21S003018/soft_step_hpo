@@ -25,13 +25,11 @@ class SoftResidualBlock(nn.Module):
                                        kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
-        self.shortcut = nn.Sequential()
-        if stride != 1 or inplanes != hidden_planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(inplanes, out_planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_planes)
-            )
+        self.shortcut = nn.Sequential(
+            nn.Conv2d(inplanes, out_planes,
+                        kernel_size=1, stride=stride, bias=False),
+            nn.BatchNorm2d(out_planes)
+        )
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -75,13 +73,11 @@ class SoftInvertedResidualBlock(nn.Module):
                                        kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes)
 
-        self.shortcut = nn.Sequential()
-        if stride != 1 or inplanes != hidden_planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(inplanes, planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes)
-            )
+        self.shortcut = nn.Sequential(
+            nn.Conv2d(inplanes, planes,
+                        kernel_size=1, stride=stride, bias=False),
+            nn.BatchNorm2d(planes)
+        )
 
     def forward(self, x):
         if self.arch_opt:
