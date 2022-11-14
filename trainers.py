@@ -276,13 +276,13 @@ class SoftStepTrainer(CNNTrainer):
 
 
 if __name__ == "__main__":
-    trainer = EvalTrainer(
-        CIFAR100, path='config/softstep_linear_o1_cifar10.json')
-    print(stat(trainer.model, (3, 32, 32)))
+    # trainer = EvalTrainer(
+    #     CIFAR100, path='config/softstep_linear_o1_cifar10.json')
+    # print(stat(trainer.model, (3, 32, 32)))
 
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
     # print(stat(trainer.model,(3,32,32)))
 
-    # trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=SEARCHSPACE)
+    trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE)
     # trainer.generate_struc()
     pass

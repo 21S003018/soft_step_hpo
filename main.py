@@ -6,7 +6,8 @@ import torch
 def softstep_eval(order=1, dataset=CIFAR10):
     config_path = "log/softstep/{}_o{}_{}.json"
     if order == 1:
-        indexs = [323, 357, 367, 315, 391]  # linear,o1,cifar10, according to w train loss
+        # linear,o1,cifar10, according to w train loss
+        indexs = [323, 357, 367, 315, 391]
         # indexs = [316, 324, 330, 332, 386, 392]  # linear,o1,cifar10, according to accu
     elif order == 2:
         indexs = [396, 394, 330, 376, 339]  # linear,o2,cifar10
@@ -24,11 +25,14 @@ if __name__ == "__main__":
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
     '''softstep(linear,o1,cifar10) evaluation '''
-    softstep_eval(1, CIFAR10)
+    # softstep_eval(1, CIFAR10)
     '''softstep(linear,o2,cifar10) evaluation '''
     # softstep_eval(2, CIFAR10)
-    # trainer = EvalTrainer(CIFAR10, "config/search_space_linear.json")
-    # trainer.train(save=True, epochs=int(EPOCHS/2))
+    '''linear search space evaluation'''
+    trainer = EvalTrainer(CIFAR10, "config/search_space_linear.json")
+    trainer.train(EPOCHS)
+    trainer = EvalTrainer(CIFAR100, "config/search_space_linear.json")
+    trainer.train(EPOCHS)
 
     '''softstep search inverted residual space'''
     # trainer = SoftStepTrainer(

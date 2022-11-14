@@ -6,12 +6,9 @@ from model.nas_model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftK
 
 
 class SoftResidualBlock(nn.Module):
-    expansion = 4
-
-    def __init__(self, inplanes, hidden_planes, kernel_size=3, stride=1, expansion=None):
+    def __init__(self, inplanes, hidden_planes, kernel_size=3, stride=1, expansion=4):
         super(SoftInvertedResidualBlock, self).__init__()
-        if not expansion:
-            self.expansion = expansion
+        self.expansion = expansion
         out_planes = self.expansion*hidden_planes
         self.conv1 = SoftChannelConv2d(
             inplanes, hidden_planes, kernel_size=1, bias=False)
@@ -27,7 +24,7 @@ class SoftResidualBlock(nn.Module):
 
         self.shortcut = nn.Sequential(
             nn.Conv2d(inplanes, out_planes,
-                        kernel_size=1, stride=stride, bias=False),
+                      kernel_size=1, stride=stride, bias=False),
             nn.BatchNorm2d(out_planes)
         )
 
@@ -52,13 +49,11 @@ class SoftResidualBlock(nn.Module):
 
 
 class SoftInvertedResidualBlock(nn.Module):
-    expansion = 6
-
-    def __init__(self, inplanes, planes, kernel_size=3, stride=1, expansion=None):
+    def __init__(self, inplanes, planes, kernel_size=3, stride=1, expansion=4):
         super(SoftInvertedResidualBlock, self).__init__()
-        if not expansion:
-            self.expansion = expansion
+        self.expansion = expansion
         hidden_planes = round(inplanes * self.expansion)
+        print(self.expansion)
         self.arch_opt = False
 
         self.conv1 = SoftChannelConv2d(
@@ -75,7 +70,7 @@ class SoftInvertedResidualBlock(nn.Module):
 
         self.shortcut = nn.Sequential(
             nn.Conv2d(inplanes, planes,
-                        kernel_size=1, stride=stride, bias=False),
+                      kernel_size=1, stride=stride, bias=False),
             nn.BatchNorm2d(planes)
         )
 
