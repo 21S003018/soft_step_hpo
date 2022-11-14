@@ -264,10 +264,10 @@ class SoftStepTrainer(CNNTrainer):
         c_last = net_struc["b0"]["conv_in"]
         for i, alpha_item in enumerate(alphas):
             c1, k, c2 = alpha_item
-            e = c1/c_last
+            e = int(c1)/c_last
             c = int(c2)
             k = 2*max(int(k), 0) + 1
-            c_last = c2
+            c_last = int(c2)
             blocks[i]["e"], blocks[i]["c"], blocks[i]["k"] = e, c, k
         net_struc["blocks"] = blocks
         # with open("config/{}-softstep_opt.json".format(self.dataset), "w") as f:
@@ -276,7 +276,8 @@ class SoftStepTrainer(CNNTrainer):
 
 
 if __name__ == "__main__":
-    trainer = EvalTrainer(CIFAR100, path='config/search_space_linear.json')
+    trainer = EvalTrainer(
+        CIFAR100, path='config/softstep_linear_o1_cifar10.json')
     print(stat(trainer.model, (3, 32, 32)))
 
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
