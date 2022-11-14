@@ -27,7 +27,7 @@ class SoftConv2d(nn.Module):
         self.channel_alpha_expansion = utils.newton_expansion(
             self.out_channels)
         self.kernel_alpha_expansion = utils.newton_expansion(
-            2*int(self.kernel_size/2))
+            int(self.kernel_size/2))
         self.reset_parameters()
         # init channel indicators and kernel mask
         self.channel_indicators = None
@@ -42,15 +42,11 @@ class SoftConv2d(nn.Module):
                       int(self.kernel_size/2), 1-1/int(self.kernel_size/2))
         return
 
-    def forward(self, x):
-        indicators = self.sample_kernel_indicator()
-        mask = torch.ones((self.kernel_size, self.kernel_size))
-        if torch.cuda.is_available():
-            mask = mask.cuda(DEVICE)
-        for index, _ in enumerate(indicators):
-            mask[index:self.kernel_size-index, index:self.kernel_size -
-                 index] = indicators[int(self.kernel_size/2)-index-1]
-        masked_weight = torch.mul(self.weight, mask)
+    def forward(self, x, arch_opt):
+        if arch_opt:
+            masked_weight = torch.mul(self.weight, self.mask)
+        else:
+            masked_weight = torch.mul(self.weight, self.mask.data)
         x = F.conv2d(x, weight=masked_weight, stride=self.stride,
                      padding=self.padding, groups=self.groups)
         return x
@@ -174,7 +170,7 @@ class SoftKernelConv2d(nn.Module):
         self.weight = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
         self.kernel_alpha = Parameter(torch.Tensor(1))
-        self.expansion = utils.newton_expansion(2*int(self.kernel_size/2))
+        self.expansion = utils.newton_expansion(int(self.kernel_size/2))
         self.reset_parameters()
         # init kernel mask
         self.mask = None
@@ -186,7 +182,7 @@ class SoftKernelConv2d(nn.Module):
                       int(self.kernel_size/2), 1-1/int(self.kernel_size/2))
         return
 
-    def forward(self, x, arch_opt=True):
+    def forward(self, x, arch_opt):
         if arch_opt:
             masked_weight = torch.mul(self.weight, self.mask)
         else:

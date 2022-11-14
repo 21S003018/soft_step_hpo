@@ -12,6 +12,7 @@ from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
 from model.cnn_model.eval import Eval
 from model.nas_model.softstep import SoftStep
+from model.nas_model.test import TSoftStep
 warnings.filterwarnings("ignore")
 
 
@@ -60,7 +61,8 @@ class CNNTrainer():
             val_accu, val_loss = self.val()
             if val_accu > opt_accu:
                 opt_accu = val_accu
-                if save:
+                if save and i < epochs/2:  # special save
+                    # if save:
                     self.save_model()
                 print(
                     f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
@@ -277,8 +279,11 @@ class SoftStepTrainer(CNNTrainer):
 
 if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
-    trainer = EvalTrainer(CIFAR100, path='config/search_space_linear.json')
-    print(stat(trainer.model, (3, 32, 32)))
+    # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear.json')
+    # print(stat(trainer.model, (3, 32, 32)))
+    model = TSoftStep(3, 32, 10, path='config/search_space.json')
+    with open("test.json", "w") as f:
+        json.dump(model.generate_config(), f)
 
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
     # print(stat(trainer.model,(3,32,32)))

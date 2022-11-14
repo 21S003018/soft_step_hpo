@@ -75,7 +75,6 @@ class MobileNetV2(nn.Module):
         x = F.adaptive_avg_pool2d(x, 1)
         x = self.conv2(x)
         x = x.view(x.size(0), -1)
-
         return x
 
     def _make_stage(self, repeat, in_channels, out_channels, stride, t):

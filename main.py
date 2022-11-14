@@ -30,9 +30,9 @@ if __name__ == "__main__":
     # softstep_eval(2, CIFAR10)
     '''linear search space evaluation'''
     trainer = EvalTrainer(CIFAR10, "config/search_space_linear.json")
-    trainer.train(EPOCHS)
+    trainer.train(save=True)
     trainer = EvalTrainer(CIFAR100, "config/search_space_linear.json")
-    trainer.train(EPOCHS)
+    trainer.train(save=True)
 
     '''softstep search inverted residual space'''
     # trainer = SoftStepTrainer(
