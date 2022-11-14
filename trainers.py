@@ -10,7 +10,7 @@ from time import time
 from torchstat import stat
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
-from model.cnn_model.eval import Eval
+from model.cnn_model.eval import Eval, TEval
 from model.nas_model.softstep import SoftStep
 from model.nas_model.test import TSoftStep
 warnings.filterwarnings("ignore")
@@ -116,6 +116,25 @@ class EvalTrainer(CNNTrainer):
         self.num_image = num_image(self.train_loader)
         # model
         self.model = Eval(self.input_channel, self.inputdim, self.nclass, path)
+        if torch.cuda.is_available():
+            self.model.cuda(DEVICE)
+        path_item = path.split("/")[-1]
+        path_item = path_item.replace(".json", "")
+        self.save_model_path = f"ckpt/{path_item}_{dataset}.pkl"
+        pass
+
+class TEvalTrainer(CNNTrainer):
+    """
+    specify for a dataset and a model
+    """
+
+    def __init__(self, dataset, path: str = None) -> None:
+        # data
+        self.dataset = dataset
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
+        # model
+        self.model = TEval(self.input_channel, self.inputdim, self.nclass, path)
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
         path_item = path.split("/")[-1]
@@ -281,9 +300,10 @@ if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
     # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear.json')
     # print(stat(trainer.model, (3, 32, 32)))
-    model = TSoftStep(3, 32, 10, path='config/search_space.json')
-    with open("test.json", "w") as f:
-        json.dump(model.generate_config(), f)
+    model = TEval(3, 32, 10, path='config/search_space_eval.json')
+    print(stat(model,(3,32,32)))
+    # with open("test.json", "w") as f:
+    #     json.dump(model.generate_config(), f)
 
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
     # print(stat(trainer.model,(3,32,32)))

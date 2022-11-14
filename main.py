@@ -1,4 +1,4 @@
-from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer
+from trainers import CNNTrainer, EvalTrainer, TEvalTrainer, NasTrainer, SoftStepTrainer
 from const import *
 import torch
 
@@ -29,10 +29,10 @@ if __name__ == "__main__":
     '''softstep(linear,o2,cifar10) evaluation '''
     # softstep_eval(2, CIFAR10)
     '''linear search space evaluation'''
-    trainer = EvalTrainer(CIFAR10, "config/search_space_linear.json")
-    trainer.train(save=True)
-    trainer = EvalTrainer(CIFAR100, "config/search_space_linear.json")
-    trainer.train(save=True)
+    trainer = TEvalTrainer(CIFAR10, "config/search_space_eval.json")
+    trainer.train()
+    # trainer = EvalTrainer(CIFAR100, "config/search_space_linear.json")
+    # trainer.train(save=True)
 
     '''softstep search inverted residual space'''
     # trainer = SoftStepTrainer(
