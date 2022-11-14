@@ -18,12 +18,9 @@ class Block(nn.Module):
 
 
 class ResidualBlock(Block):
-    expansion = 4
-
     def __init__(self, inplanes, hidden_planes, kernel_size=3, stride=1, expansion=None):
         super(ResidualBlock, self).__init__()
-        if not expansion is None:
-            self.expansion = expansion
+        self.expansion = expansion
         out_planes = self.expansion*hidden_planes
         self.conv1 = nn.Conv2d(
             inplanes, hidden_planes, kernel_size=1, bias=False)
@@ -45,12 +42,9 @@ class ResidualBlock(Block):
 
 
 class InvertedResidualBlock(Block):
-    expansion = 6
-
     def __init__(self, inplanes, planes, kernel_size=3, stride=1, expansion=None):
         super(InvertedResidualBlock, self).__init__()
-        if not expansion:
-            self.expansion = expansion
+        self.expansion = expansion
         hidden_planes = round(inplanes * self.expansion)
 
         # pw

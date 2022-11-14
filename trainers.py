@@ -283,6 +283,6 @@ if __name__ == "__main__":
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
     # print(stat(trainer.model,(3,32,32)))
 
-    trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE)
+    # trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE)
     # trainer.generate_struc()
     pass
