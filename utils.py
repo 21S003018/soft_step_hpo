@@ -123,6 +123,6 @@ def analyse_trainloss(path, order=1):
 
 
 if __name__ == "__main__":
-    analyse_trainloss("log/softstep_linear_o2_cifar10.log", order=2)
-    # analyse_trainloss("log/softstep_linear_o1_cifar10.log")
+    # analyse_trainloss("log/softstep_linear_o2_cifar10.log", order=2)
+    analyse_trainloss("log/softstep_linear_o1_cifar10.log")
     pass
