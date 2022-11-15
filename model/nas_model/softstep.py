@@ -251,13 +251,13 @@ class SkipLinearBlock(nn.Module):  # skip block
             out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
             out = torch.mul(out, self.conv1.channel_indicators)
 
-            out = F.relu6(self.bn3(self.conv3(out)) + x)
+            out = self.bn3(self.conv3(out))
         else:
             out = F.relu6(self.bn1(self.conv1(x)))
             out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
             out = torch.mul(out, self.conv1.channel_indicators.data)
 
-            out = F.relu6(self.bn3(self.conv3(out)) + x)
+            out = self.bn3(self.conv3(out))
         return out
 
     def update_indicators(self):
@@ -288,13 +288,12 @@ class LinearStage(nn.Module):
         x = self.block(x, arch_opt)
         if arch_opt:
             for skip in self.skips:
-                x = skip(x, arch_opt)
-                x = torch.mul(x, self.block.conv3.channel_indicators)
+                x = F.relu6(torch.mul(skip(x, arch_opt),
+                            self.block.conv3.channel_indicators) + x)
         else:
             for skip in self.skips:
-                x = skip(x, arch_opt)
-                x = torch.mul(
-                    x, self.block.conv3.channel_indicators.data)
+                x = F.relu6(torch.mul(skip(x, arch_opt),
+                            self.block.conv3.channel_indicators.data) + x)
         return x
 
     def update_indicators(self):

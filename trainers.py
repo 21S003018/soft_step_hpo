@@ -200,6 +200,8 @@ class SoftStepTrainer(CNNTrainer):
         self.model_name = model_name
         self.dataset = dataset
         self.order = opt_order
+        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-6
+        self.arch_lr = 0.1 if self.dataset == CIFAR10 else 0.1
         # load data
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
@@ -215,7 +217,7 @@ class SoftStepTrainer(CNNTrainer):
         self.model_optimizer = torch.optim.SGD(
             self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         self.arch_optimizer = torch.optim.SGD(
-            self.model.arch_parameters(), lr=0.5, momentum=P_MOMENTUM, weight_decay=1e-5)
+            self.model.arch_parameters(), lr=self.arch_lr, momentum=P_MOMENTUM, weight_decay=self.arch_decay)
         opt_accu = -1
         for i in range(EPOCHS*2):
             self.model.train()
