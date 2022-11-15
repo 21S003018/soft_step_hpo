@@ -20,34 +20,36 @@ def softstep_eval(order=1, dataset=CIFAR10):
 
 
 if __name__ == "__main__":
-    # trainer = CNNTrainer(MOBILENET, CIFAR100)
-    # trainer.train()
+    '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
-    '''softstep(linear,o1,cifar10) evaluation '''
-    # softstep_eval(1, CIFAR10)
-    '''softstep(linear,o2,cifar10) evaluation '''
-    # softstep_eval(2, CIFAR10)
-    '''linear search space evaluation'''
-    # trainer = TEvalTrainer(CIFAR10, "config/search_space_eval.json")
+    # trainer = CNNTrainer(MOBILENET, CIFAR100)
+    # trainer.train()
+    '''linear searchspace evaluation'''
+    # trainer = EvalTrainer(CIFAR10, "config/search_space_eval.json")
     # trainer.train()
     # trainer = EvalTrainer(CIFAR100, "config/search_space_eval.json")
     # trainer.train()
-
-    '''softstep search inverted residual space'''
+    '''softstep search linear searchspace'''
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=1)
     # trainer.train()
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=2)
     # trainer.train()
-    trainer = SoftStepTrainer(
-        SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=1)
-    trainer.train()
+    # trainer = SoftStepTrainer(
+    #     SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=1)
+    # trainer.train()
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=2)
     # trainer.train()
-    '''softstep search residual space'''
+    '''softstep(linear,o1,cifar10) evaluation'''
+    # softstep_eval(1, CIFAR10)
+    '''softstep(linear,o2,cifar10) evaluation'''
+    # softstep_eval(2, CIFAR10)
+
+    '''bottleneck searchspace evaluation'''
+    '''softstep search bottleneck searchspace'''
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
     # trainer.train()
@@ -60,4 +62,8 @@ if __name__ == "__main__":
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=2)
     # trainer.train()
+    '''softstep(bottleneck,o1,cifar10) evaluation'''
+    # softstep_eval(1, CIFAR10)
+    '''softstep(bottleneck,o2,cifar10) evaluation'''
+    # softstep_eval(2, CIFAR10)
     pass
