@@ -184,36 +184,36 @@ class TSoftStep(nn.Module):
             if name.__contains__("alpha"):
                 yield param
 
-    def generate_config(self):
+    def generate_config(self, full=False):
         config = {"type": self.block_type}
         # layer
         config["layer"] = {
-            "conv_in": int(self.conv_in.channel_alpha*self.conv_in.out_channels),
-            "conv_out": int(self.conv_out.channel_alpha*self.conv_out.out_channels)
+            "conv_in": self.conv_in.out_channels if full else int(self.conv_in.channel_alpha*self.conv_in.out_channels),
+            "conv_out": self.conv_out.out_channels if full else int(self.conv_out.channel_alpha*self.conv_out.out_channels)
         }
         # block
         config["block"] = [{
             "type": "normal",
-            "c1": int(self.block_in.conv1.channel_alpha*self.block_in.conv1.out_channels),
-            "k": int(self.block_in.conv2.kernel_alpha*int(self.block_in.conv2.kernel_size/2))*2+1,
-            "c2": int(self.block_in.conv3.channel_alpha*self.block_in.conv3.out_channels),
+            "c1": self.block_in.conv1.out_channels if full else int(self.block_in.conv1.channel_alpha*self.block_in.conv1.out_channels),
+            "k": self.block_in.conv2.kernel_size if full else int(self.block_in.conv2.kernel_alpha*int(self.block_in.conv2.kernel_size/2))*2+1,
+            "c2": self.block_in.conv3.out_channels if full else int(self.block_in.conv3.channel_alpha*self.block_in.conv3.out_channels),
             "s": 1
         }]
         # stage
         for stage in self.stages:
             config["block"].append({
                 "type": "normal" if stage.stride == 1 else "reduction",
-                "c1": int(stage.block.conv1.channel_alpha*stage.block.conv1.out_channels),
-                "k": int(stage.block.conv2.kernel_alpha*int(stage.block.conv2.kernel_size/2))*2+1,
-                "c2": int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
+                "c1": stage.block.conv1.out_channels if full else int(stage.block.conv1.channel_alpha*stage.block.conv1.out_channels),
+                "k": stage.block.conv2.kernel_size if full else int(stage.block.conv2.kernel_alpha*int(stage.block.conv2.kernel_size/2))*2+1,
+                "c2": stage.block.conv3.out_channels if full else int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
                 "s": stage.stride
             })
             for skip in stage.skips:
                 config["block"].append({
                     "type": "skip",
-                    "c1": int(skip.conv1.channel_alpha*skip.conv1.out_channels),
-                    "k": int(skip.conv2.kernel_alpha*int(skip.conv2.kernel_size/2))*2+1,
-                    "c2": int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
+                    "c1": skip.conv1.out_channels if full else int(skip.conv1.channel_alpha*skip.conv1.out_channels),
+                    "k": skip.conv2.kernel_size if full else int(skip.conv2.kernel_alpha*int(skip.conv2.kernel_size/2))*2+1,
+                    "c2": stage.block.conv3.out_channels if full else int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
                     "s": 1
                 })
         return config

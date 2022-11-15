@@ -100,6 +100,10 @@ class SoftConv2d(nn.Module):
                       index] = indicators[int(self.kernel_size/2)-index-1]
         return
 
+    def protect_controller(self):
+
+        return
+
 
 class SoftChannelConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=None, groups=1):
@@ -140,11 +144,6 @@ class SoftChannelConv2d(nn.Module):
         return torch.sigmoid(self.expansion*self.out_channels*(self.channel_alpha+self.controller_approx_delta()-indexes/self.out_channels))
 
     def controller_approx_delta(self):
-        if self.channel_alpha.data > 1:
-            init.uniform_(self.channel_alpha, 1, 1)
-        if self.channel_alpha.data < 1/self.out_channels:
-            init.uniform_(self.channel_alpha, 1 /
-                          self.out_channels, 1/self.out_channels)
         real_controller = self.channel_alpha.data*self.out_channels
         real_delta = 0.5-(real_controller - real_controller.floor())
         unit_delta = real_delta/self.out_channels
@@ -153,6 +152,14 @@ class SoftChannelConv2d(nn.Module):
     def update_channel_indicators(self):
         self.channel_indicators = self.sample_indicator().reshape(
             (1, self.out_channels, 1, 1))
+        return
+
+    def protect_controller(self):
+        if self.channel_alpha.data > 1:
+            init.uniform_(self.channel_alpha, 1, 1)
+        if self.channel_alpha.data < 1/self.out_channels:
+            init.uniform_(self.channel_alpha, 1 /
+                          self.out_channels, 1/self.out_channels)
         return
 
 
@@ -198,11 +205,6 @@ class SoftKernelConv2d(nn.Module):
         return torch.sigmoid(self.expansion*int(self.kernel_size/2)*(self.kernel_alpha+self.controller_approx_delta()-indexes/int(self.kernel_size/2)))
 
     def controller_approx_delta(self):
-        if self.kernel_alpha.data > 1:
-            init.uniform_(self.kernel_alpha, 1, 1)
-        if self.kernel_alpha.data < 1/int(self.kernel_size/2):
-            init.uniform_(self.kernel_alpha, 1 /
-                          int(self.kernel_size/2), 1/int(self.kernel_size/2))
         real_controller = self.kernel_alpha.data*int(self.kernel_size/2)
         real_delta = 0.5-(real_controller - real_controller.floor())
         unit_delta = real_delta/int(self.kernel_size/2)
@@ -216,4 +218,12 @@ class SoftKernelConv2d(nn.Module):
         for index, _ in enumerate(indicators):
             self.mask[index:self.kernel_size-index, index:self.kernel_size -
                       index] = indicators[int(self.kernel_size/2)-index-1]
+        return
+
+    def protect_controller(self):
+        if self.kernel_alpha.data > 1:
+            init.uniform_(self.kernel_alpha, 1, 1)
+        if self.kernel_alpha.data < 1/int(self.kernel_size/2):
+            init.uniform_(self.kernel_alpha, 1 /
+                          int(self.kernel_size/2), 1/int(self.kernel_size/2))
         return
