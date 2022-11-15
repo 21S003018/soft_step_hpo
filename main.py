@@ -31,7 +31,7 @@ if __name__ == "__main__":
     '''linear search space evaluation'''
     # trainer = TEvalTrainer(CIFAR10, "config/search_space_eval.json")
     # trainer.train()
-    trainer = EvalTrainer(CIFAR100, "config/search_space_eval.json")
+    trainer = TEvalTrainer(CIFAR100, "config/search_space_eval.json")
     trainer.train()
 
     '''softstep search inverted residual space'''
