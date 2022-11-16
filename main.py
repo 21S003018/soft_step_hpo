@@ -37,9 +37,9 @@ if __name__ == "__main__":
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=2)
     # trainer.train()
-    # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=1)
-    # trainer.train()
+    trainer = SoftStepTrainer(
+        SOFTSTEP, CIFAR100, path=SEARCHSPACE, opt_order=1)
+    trainer.train()
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=2)
     # trainer.train()

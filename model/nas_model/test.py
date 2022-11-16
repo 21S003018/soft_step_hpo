@@ -5,18 +5,18 @@ import torch.nn.functional as F
 from model.nas_model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
 
 
-class LinearBlock(nn.Module):  # normal block or reduction block
-    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, expansion=4):
-        super(LinearBlock, self).__init__()
+class Bottleneck(nn.Module):  # normal block or reduction block
+    def __init__(self, in_planes, hidden_planes, kernel_size=3, stride=1, expansion=4):
+        super(Bottleneck, self).__init__()
 
-        hidden_planes = round(in_planes * expansion)
+        out_planes = round(in_planes * expansion)
 
         self.conv1 = SoftChannelConv2d(
             in_planes, hidden_planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
-        self.conv2 = SoftKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                      stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+        self.conv2 = SoftConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
+                                stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = SoftChannelConv2d(hidden_planes, out_planes,
@@ -26,41 +26,47 @@ class LinearBlock(nn.Module):  # normal block or reduction block
     def forward(self, x, arch_opt):
         if arch_opt:
             out = F.relu6(self.bn1(self.conv1(x)))
-            out = F.relu6(self.bn2(self.conv2(out)))
             out = torch.mul(out, self.conv1.channel_indicators)
-
+            out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
+            out = torch.mul(out, self.conv2.channel_indicators)
             out = F.relu6(self.bn3(self.conv3(out)))
             out = torch.mul(out, self.conv3.channel_indicators)
         else:
             out = F.relu6(self.bn1(self.conv1(x)))
-            out = F.relu6(self.bn2(self.conv2(out, False)))
             out = torch.mul(out, self.conv1.channel_indicators.data)
-
+            out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
+            out = torch.mul(out, self.conv2.channel_indicators.data)
             out = F.relu6(self.bn3(self.conv3(out)))
             out = torch.mul(out, self.conv3.channel_indicators.data)
         return out
 
     def update_indicators(self):
         self.conv1.update_channel_indicators()
+        self.conv2.update_channel_indicators()
         self.conv2.update_kernel_mask()
         self.conv3.update_channel_indicators()
         return
 
+    def protect_controller(self):
+        self.conv1.protect_controller()
+        self.conv2.protect_controller()
+        self.conv3.protect_controller()
+        return
 
-class SkipLinearBlock(nn.Module):  # skip block
-    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, expansion=4):
-        super(SkipLinearBlock, self).__init__()
+
+class SkipBottleneck(nn.Module):  # skip block
+    def __init__(self, in_planes, hidden_planes, kernel_size=3, stride=1, expansion=4):
+        super(SkipBottleneck, self).__init__()
+        out_planes = round(in_planes * expansion)
         assert in_planes == out_planes
         assert stride == 1
-
-        hidden_planes = round(in_planes * expansion)
 
         self.conv1 = SoftChannelConv2d(
             in_planes, hidden_planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
-        self.conv2 = SoftKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                      stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+        self.conv2 = SoftConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
+                                stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = nn.Conv2d(hidden_planes, out_planes,
@@ -70,48 +76,54 @@ class SkipLinearBlock(nn.Module):  # skip block
     def forward(self, x, arch_opt):
         if arch_opt:
             out = F.relu6(self.bn1(self.conv1(x)))
-            out = F.relu6(self.bn2(self.conv2(out)))
             out = torch.mul(out, self.conv1.channel_indicators)
-
-            out = F.relu6(self.bn3(self.conv3(out)) + x)
+            out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
+            out = torch.mul(out, self.conv2.channel_indicators)
+            out = self.bn3(self.conv3(out))
         else:
             out = F.relu6(self.bn1(self.conv1(x)))
-            out = F.relu6(self.bn2(self.conv2(out, False)))
             out = torch.mul(out, self.conv1.channel_indicators.data)
-
-            out = F.relu6(self.bn3(self.conv3(out)) + x)
+            out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
+            out = torch.mul(out, self.conv2.channel_indicators.data)
+            out = self.bn3(self.conv3(out))
         return out
 
     def update_indicators(self):
         self.conv1.update_channel_indicators()
+        self.conv2.update_channel_indicators()
         self.conv2.update_kernel_mask()
         return
 
+    def protect_controller(self):
+        self.conv1.protect_controller()
+        self.conv2.protect_controller()
+        return
 
-class LinearStage(nn.Module):
-    def __init__(self, in_planes, out_planes, kernel_size, stride, expansion, n_skip):
-        super(LinearStage, self).__init__()
+
+class BottleneckStage(nn.Module):
+    def __init__(self, in_planes, hidden_planes, kernel_size, stride, expansion, n_skip):
+        super(BottleneckStage, self).__init__()
         self.stride = stride
-        self.block = LinearBlock(
-            in_planes, out_planes, kernel_size=kernel_size, stride=stride, expansion=expansion)
-        self.skips = []
+        self.block = Bottleneck(
+            in_planes, hidden_planes, kernel_size=kernel_size, stride=stride, expansion=expansion)
+        skips = []
         for _ in range(n_skip):
-            self.skips.append(SkipLinearBlock(
-                out_planes, out_planes, kernel_size=kernel_size, stride=1, expansion=expansion))
+            skips.append(SkipBottleneck(
+                hidden_planes*expansion, hidden_planes, kernel_size=kernel_size, stride=1, expansion=expansion))
+        self.skips = nn.Sequential(*skips)
         return
 
     def forward(self, x, arch_opt=False):
         x = self.block(x, arch_opt)
         if arch_opt:
             for skip in self.skips:
-                x = skip(x, arch_opt)
-                x = torch.mul(x, self.block.conv3.channel_indicators)
+                x = F.relu6(torch.mul(skip(x, arch_opt),
+                            self.block.conv3.channel_indicators) + x)
         else:
             for skip in self.skips:
-                x = skip(x, arch_opt)
-                x = torch.mul(
-                    x, self.block.conv3.channel_indicators.data)
-        return
+                x = F.relu6(torch.mul(skip(x, arch_opt),
+                            self.block.conv3.channel_indicators.data) + x)
+        return x
 
     def update_indicators(self):
         self.block.update_indicators()
@@ -119,42 +131,42 @@ class LinearStage(nn.Module):
             skip.update_indicators()
         return
 
+    def protect_controller(self):
+        self.block.protect_controller()
+        for skip in self.skips:
+            skip.protect_controller()
+        return
 
-class TSoftStep(nn.Module):
+
+class BottleneckSoftStep(nn.Module):
     def __init__(self, input_channel, ndim, num_classes, path=None) -> None:
-        super(TSoftStep, self).__init__()
+        super(BottleneckSoftStep, self).__init__()
         with open(path, 'r') as f:
             config = json.load(f)
         self.block_type = config["type"]
         # pre conv
         input_channel = input_channel
         output_channel = config["layer"]["conv_in"]
-        self.conv_in = SoftChannelConv2d(
-            input_channel, output_channel, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn_in = nn.BatchNorm2d(output_channel)
-        # pre block
-        block_config = config["block"]
-        in_planes = output_channel
-        expansion, out_planes, kernel_size, stride = block_config[
-            'e'], block_config['c'], block_config['k'], block_config['s']
-        self.block_in = LinearBlock(
-            in_planes, out_planes, kernel_size, stride, expansion)
+        self.conv_in, self.bn_in = SoftChannelConv2d(
+            input_channel, output_channel, kernel_size=3, stride=1, padding=1, bias=False), nn.BatchNorm2d(output_channel)
         # stages
-        self.stages = []
+        out_planes = output_channel
+        expansion = 4
+        stages = []
         for stage_config in config["stage"]:
             e, c, n, k, s = stage_config['e'], stage_config['c'], stage_config['n'], stage_config['k'], stage_config['s']
             in_planes = out_planes
-            out_planes = c
-            self.stages.append(LinearStage(
-                in_planes, out_planes, kernel_size=k, stride=s, expansion=e, n_skip=n-1))
+            hidden_planes = c
+            stages.append(BottleneckStage(
+                in_planes, hidden_planes, kernel_size=k, stride=s, expansion=e, n_skip=n-1))
+        self.stages = nn.Sequential(*stages)
         # post conv
         input_channel = out_planes
         output_channel = config["layer"]["conv_out"]
-        self.conv_out = SoftChannelConv2d(
-            input_channel, output_channel, kernel_size=1, stride=1, padding=0, bias=False)
-        self.bn_out = nn.BatchNorm2d(output_channel)
+        self.conv_out, self.bn_out = SoftChannelConv2d(
+            input_channel, output_channel, kernel_size=1, stride=1, padding=0, bias=False), nn.BatchNorm2d(output_channel)
         # final
-        self.fc = nn.Linear(output_channel, num_classes)
+        self.fc = nn.Linear(hidden_planes*expansion, num_classes)
         return
 
     def forward(self, x, arch_opt=False):
@@ -227,6 +239,14 @@ class TSoftStep(nn.Module):
         # stage
         for stage in self.stages:
             stage.update_indicators()
+        return
+
+    def protect_controller(self):
+        self.conv_in.protect_controller()
+        self.block_in.protect_controller()
+        for stage in self.stages:
+            stage.protect_controller()
+        self.conv_out.protect_controller()
         return
 
 
