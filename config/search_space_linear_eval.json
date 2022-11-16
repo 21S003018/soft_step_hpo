@@ -104,11 +104,11 @@
             "s": 1
         },
         {
-            "type": "reduction",
+            "type": "normal",
             "c1": 768,
             "k": 7,
             "c2": 256,
-            "s": 2
+            "s": 1
         },
         {
             "type": "skip",
