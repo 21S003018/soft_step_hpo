@@ -4,10 +4,10 @@ import torch
 
 
 def softstep_eval(order=1, dataset=CIFAR10):
-    config_path = "log/softstep/{}_o{}_{}.json"
+    config_path = "log/softstep_linear_1e-6/{}_o{}_{}.json"
     if order == 1:
         # linear,o1,cifar10, according to w train loss
-        indexs = [323, 357, 367, 315, 391]
+        indexs = [129, 235, 305, 229]
         # indexs = [316, 324, 330, 332, 386, 392]  # linear,o1,cifar10, according to accu
     elif order == 2:
         indexs = [396, 394, 330, 376, 339]  # linear,o2,cifar10
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     #     SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=2)
     # trainer.train()
     trainer = SoftStepTrainer(
-        SOFTSTEP, CIFAR100, path=SEARCHSPACE, opt_order=1)
+        SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=1)
     trainer.train()
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=2)
@@ -47,6 +47,10 @@ if __name__ == "__main__":
     # softstep_eval(1, CIFAR10)
     '''softstep(linear,o2,cifar10) evaluation'''
     # softstep_eval(2, CIFAR10)
+    '''softstep(linear,o1,cifar100) evaluation'''
+    # softstep_eval(1, CIFAR100)
+    '''softstep(linear,o2,cifar100) evaluation'''
+    # softstep_eval(2, CIFAR100)
 
     '''bottleneck searchspace evaluation'''
     '''softstep search bottleneck searchspace'''

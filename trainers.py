@@ -199,7 +199,7 @@ class SoftStepTrainer(CNNTrainer):
         self.model_name = model_name
         self.dataset = dataset
         self.order = opt_order
-        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-6
+        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
         self.arch_lr = 0.1 if self.dataset == CIFAR10 else 0.1
         # load data
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
@@ -262,6 +262,8 @@ if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
     # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear.json')
     # print(stat(trainer.model, (3, 32, 32)))
+    # model = BottleneckEval(
+    # 3, 32, 100, path='config/search_space_bottleneck_eval.json')
     model = BottleneckEval(
         3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
