@@ -150,23 +150,22 @@ class BottleneckSoftStep(nn.Module):
         self.conv_in, self.bn_in = SoftChannelConv2d(
             input_channel, output_channel, kernel_size=3, stride=1, padding=1, bias=False), nn.BatchNorm2d(output_channel)
         # stages
-        out_planes = output_channel
-        expansion = 4
+        in_planes = output_channel
         stages = []
         for stage_config in config["stage"]:
             e, c, n, k, s = stage_config['e'], stage_config['c'], stage_config['n'], stage_config['k'], stage_config['s']
-            in_planes = out_planes
             hidden_planes = c
             stages.append(BottleneckStage(
                 in_planes, hidden_planes, kernel_size=k, stride=s, expansion=e, n_skip=n-1))
+            in_planes = hidden_planes*e
         self.stages = nn.Sequential(*stages)
         # post conv
-        input_channel = out_planes
+        input_channel = in_planes
         output_channel = config["layer"]["conv_out"]
         self.conv_out, self.bn_out = SoftChannelConv2d(
             input_channel, output_channel, kernel_size=1, stride=1, padding=0, bias=False), nn.BatchNorm2d(output_channel)
         # final
-        self.fc = nn.Linear(hidden_planes*expansion, num_classes)
+        self.fc = nn.Linear(output_channel, num_classes)
         return
 
     def forward(self, x, arch_opt=False):
@@ -175,7 +174,6 @@ class BottleneckSoftStep(nn.Module):
         x = F.relu6(self.bn_in(self.conv_in(x)))
         if arch_opt:
             x = torch.mul(x, self.conv_in.channel_indicators)
-        x = self.block_in(x, arch_opt)
         for stage in self.stages:
             x = stage(x, arch_opt)
         x = F.relu6(self.bn_out(self.conv_out(x)))
@@ -204,20 +202,15 @@ class BottleneckSoftStep(nn.Module):
             "conv_out": self.conv_out.out_channels if full else int(self.conv_out.channel_alpha*self.conv_out.out_channels)
         }
         # block
-        config["block"] = [{
-            "type": "normal",
-            "c1": self.block_in.conv1.out_channels if full else int(self.block_in.conv1.channel_alpha*self.block_in.conv1.out_channels),
-            "k": self.block_in.conv2.kernel_size if full else int(self.block_in.conv2.kernel_alpha*int(self.block_in.conv2.kernel_size/2))*2+1,
-            "c2": self.block_in.conv3.out_channels if full else int(self.block_in.conv3.channel_alpha*self.block_in.conv3.out_channels),
-            "s": 1
-        }]
+        config["block"] = []
         # stage
         for stage in self.stages:
             config["block"].append({
                 "type": "normal" if stage.stride == 1 else "reduction",
                 "c1": stage.block.conv1.out_channels if full else int(stage.block.conv1.channel_alpha*stage.block.conv1.out_channels),
                 "k": stage.block.conv2.kernel_size if full else int(stage.block.conv2.kernel_alpha*int(stage.block.conv2.kernel_size/2))*2+1,
-                "c2": stage.block.conv3.out_channels if full else int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
+                "c2": stage.block.conv2.out_channels if full else int(stage.block.conv2.channel_alpha*stage.block.conv2.out_channels),
+                "c3": stage.block.conv3.out_channels if full else int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
                 "s": stage.stride
             })
             for skip in stage.skips:
@@ -225,7 +218,8 @@ class BottleneckSoftStep(nn.Module):
                     "type": "skip",
                     "c1": skip.conv1.out_channels if full else int(skip.conv1.channel_alpha*skip.conv1.out_channels),
                     "k": skip.conv2.kernel_size if full else int(skip.conv2.kernel_alpha*int(skip.conv2.kernel_size/2))*2+1,
-                    "c2": stage.block.conv3.out_channels if full else int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
+                    "c2": skip.conv2.out_channels if full else int(skip.conv2.channel_alpha*skip.conv2.out_channels),
+                    "c3": stage.block.conv3.out_channels if full else int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
                     "s": 1
                 })
         return config
@@ -234,8 +228,6 @@ class BottleneckSoftStep(nn.Module):
         # layer
         self.conv_in.update_channel_indicators()
         self.conv_out.update_channel_indicators()
-        # block
-        self.block_in.update_indicators()
         # stage
         for stage in self.stages:
             stage.update_indicators()
@@ -243,7 +235,6 @@ class BottleneckSoftStep(nn.Module):
 
     def protect_controller(self):
         self.conv_in.protect_controller()
-        self.block_in.protect_controller()
         for stage in self.stages:
             stage.protect_controller()
         self.conv_out.protect_controller()

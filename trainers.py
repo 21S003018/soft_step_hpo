@@ -10,9 +10,8 @@ from time import time
 from torchstat import stat
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
-from model.cnn_model.eval import Eval
-from model.nas_model.softstep import SoftStep
-from model.nas_model.test import TSoftStep
+from model.cnn_model.eval import Eval, BottleneckEval
+from model.nas_model.softstep import SoftStep, BottleneckSoftStep
 warnings.filterwarnings("ignore")
 
 
@@ -263,11 +262,13 @@ if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
     # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear.json')
     # print(stat(trainer.model, (3, 32, 32)))
-    # model = TEval(3, 32, 10, path='config/search_space_eval.json')
+    model = BottleneckEval(
+        3, 32, 10, path='config/search_space_bottleneck_eval.json')
     # model = MobileNetV2(3, 32, 10)
-    # print(stat(model, (3, 32, 32)))
+    print(stat(model, (3, 32, 32)))
 
-    # model = TSoftStep(3, 32, 10, path='config/search_space.json')
+    # model = BottleneckSoftStep(
+    #     3, 32, 10, path='config/search_space_bottleneck.json')
     # with open("test.json", "w") as f:
     #     json.dump(model.generate_config(True), f)
 
