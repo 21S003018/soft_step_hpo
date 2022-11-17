@@ -176,15 +176,21 @@ class SoftStep(nn.Module):
     def forward(self, x, arch_opt=False):
         if arch_opt:
             self.update_indicators()
-        x = F.relu6(self.bn_in(self.conv_in(x)))
-        if arch_opt:
+            x = F.relu6(self.bn_in(self.conv_in(x)))
             x = torch.mul(x, self.conv_in.channel_indicators)
-        x = self.block_in(x, arch_opt)
-        for stage in self.stages:
-            x = stage(x, arch_opt)
-        x = F.relu6(self.bn_out(self.conv_out(x)))
-        if arch_opt:
+            x = self.block_in(x, arch_opt)
+            for stage in self.stages:
+                x = stage(x, arch_opt)
+            x = F.relu6(self.bn_out(self.conv_out(x)))
             x = torch.mul(x, self.conv_out.channel_indicators)
+        else:
+            x = F.relu6(self.bn_in(self.conv_in(x)))
+            x = torch.mul(x, self.conv_in.channel_indicators.data)
+            x = self.block_in(x, arch_opt)
+            for stage in self.stages:
+                x = stage(x, arch_opt)
+            x = F.relu6(self.bn_out(self.conv_out(x)))
+            x = torch.mul(x, self.conv_out.channel_indicators.data)
         x = F.adaptive_avg_pool2d(x, 1)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
