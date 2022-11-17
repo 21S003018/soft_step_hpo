@@ -217,15 +217,26 @@ class SoftStepTrainer(CNNTrainer):
             self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         self.arch_optimizer = torch.optim.SGD(
             self.model.arch_parameters(), lr=self.arch_lr, momentum=P_MOMENTUM, weight_decay=self.arch_decay)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.model_optimizer, EPOCHS, eta_min=0.001)
         opt_accu = -1
         for i in range(EPOCHS):
             self.model.train()
             loss_sum = 0
+            scheduler.step()
             st_time = time()
             for imgs, label in self.train_loader:
                 if torch.cuda.is_available():
                     imgs = imgs.cuda(DEVICE)
                     label = label.cuda(DEVICE)
+                # fine tune model
+                for _ in range(self.order):
+                    arch_opt = False
+                    preds = self.model(imgs, arch_opt)
+                    loss = F.cross_entropy(preds, label)
+                    self.model_optimizer.zero_grad()
+                    loss.backward()
+                    self.model_optimizer.step()
                 # fine tune arch
                 arch_opt = True
                 preds = self.model(imgs, arch_opt)
@@ -234,13 +245,6 @@ class SoftStepTrainer(CNNTrainer):
                 loss.backward()
                 self.arch_optimizer.step()
                 self.model.protect_controller()
-                # fine tune arch
-                arch_opt = False
-                preds = self.model(imgs, arch_opt)
-                loss = F.cross_entropy(preds, label)
-                self.model_optimizer.zero_grad()
-                loss.backward()
-                self.model_optimizer.step()
                 loss_sum += loss.item() * len(imgs)/self.num_image
             ed_time = time()
             # eval
@@ -250,12 +254,13 @@ class SoftStepTrainer(CNNTrainer):
             # show epoch training message
             epoch_note = ''
             # epoch_note = 'Arch' if arch_opt else 'Modl'
-            print(f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+            print(
+                f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}, learning rate:{round(scheduler.get_lr()[0],4)}")
             # show arch params
-            if arch_opt:
-                for name, param in self.model.named_parameters():
-                    if name.__contains__("alpha"):
-                        print(name, param.item(), param.grad.item())
+            # if arch_opt:
+            for name, param in self.model.named_parameters():
+                if name.__contains__("alpha"):
+                    print(name, param.item(), param.grad.item())
             # save arch params
             current_config = self.model.generate_config()
             with open(f"log/softstep/{i+1}_o{self.order}_{self.dataset}.json", "w") as f:
