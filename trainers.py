@@ -39,12 +39,15 @@ class CNNTrainer():
             self.load_model()
         self.optimizer = torch.optim.SGD(
             self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
-        lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
-            self.optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
+        # lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
+        #     self.optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.optimizer, EPOCHS, eta_min=0.001)
         opt_accu = -1
         for i in range(epochs):
             self.model.train()
             loss_sum = 0
+            lr_scheduler.step()
             st_time = time()
             for imgs, label in self.train_loader:
                 if torch.cuda.is_available():
@@ -60,14 +63,13 @@ class CNNTrainer():
             val_accu, val_loss = self.val()
             if val_accu > opt_accu:
                 opt_accu = val_accu
-                if save and i < epochs/2:  # special save
-                    # if save:
-                    self.save_model()
+                # if save and i < epochs/2:  # special save
+                #     # if save:
+                #     self.save_model()
                 print(
                     f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
             else:
                 print(f"Epoch~{i+1}->time:{round(time()-st_time,4)}")
-            lr_schedular.step()
         return
 
     def val(self):
@@ -122,6 +124,82 @@ class EvalTrainer(CNNTrainer):
         path_item = path_item.replace(".json", "")
         self.save_model_path = f"ckpt/{path_item}_{dataset}.pkl"
         pass
+
+
+class SoftStepTrainer(CNNTrainer):
+    def __init__(self, model_name, dataset, path=None, opt_order=1) -> None:
+        # config
+        self.path = path
+        self.model_name = model_name
+        self.dataset = dataset
+        self.order = opt_order
+        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-4
+        self.arch_lr = 0.1 if self.dataset == CIFAR10 else 0.1
+        # load data
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
+        # init model
+        self.model = SoftStep(self.input_channel,
+                              self.inputdim, self.nclass, path=path)
+        if torch.cuda.is_available():
+            self.model.cuda(DEVICE)
+        self.model.update_indicators()
+        return
+
+    def train(self):
+        self.model_optimizer = torch.optim.SGD(
+            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        self.arch_optimizer = torch.optim.SGD(
+            self.model.arch_parameters(), lr=self.arch_lr, momentum=P_MOMENTUM, weight_decay=self.arch_decay)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.model_optimizer, EPOCHS, eta_min=0.001)
+        opt_accu = -1
+        for i in range(EPOCHS):
+            self.model.train()
+            loss_sum = 0
+            scheduler.step()
+            st_time = time()
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(DEVICE)
+                    label = label.cuda(DEVICE)
+                # fine tune model
+                for _ in range(self.order):
+                    arch_opt = False
+                    preds = self.model(imgs, arch_opt)
+                    loss = F.cross_entropy(preds, label)
+                    self.model_optimizer.zero_grad()
+                    loss.backward()
+                    self.model_optimizer.step()
+                # fine tune arch
+                arch_opt = True
+                preds = self.model(imgs, arch_opt)
+                loss = F.cross_entropy(preds, label)
+                self.arch_optimizer.zero_grad()
+                loss.backward()
+                self.arch_optimizer.step()
+                self.model.protect_controller()
+                loss_sum += loss.item() * len(imgs)/self.num_image
+            ed_time = time()
+            # eval
+            val_accu, val_loss = self.val()
+            if val_accu > opt_accu:
+                opt_accu = val_accu
+            # show epoch training message
+            epoch_note = ''
+            # epoch_note = 'Arch' if arch_opt else 'Modl'
+            print(
+                f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}, learning rate:{round(scheduler.get_lr()[0],4)}")
+            # show arch params
+            # if arch_opt:
+            for name, param in self.model.named_parameters():
+                if name.__contains__("alpha"):
+                    print(name, param.item(), param.grad.item())
+            # save arch params
+            current_config = self.model.generate_config()
+            with open(f"log/softstep/{i+1}_o{self.order}_{self.dataset}.json", "w") as f:
+                json.dump(current_config, f)
+        return
 
 
 class NasTrainer(CNNTrainer):
@@ -192,95 +270,20 @@ class NasTrainer(CNNTrainer):
         return
 
 
-class SoftStepTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None, opt_order=1) -> None:
-        # config
-        self.path = path
-        self.model_name = model_name
-        self.dataset = dataset
-        self.order = opt_order
-        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
-        self.arch_lr = 0.1 if self.dataset == CIFAR10 else 0.1
-        # load data
-        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
-        self.num_image = num_image(self.train_loader)
-        # init model
-        self.model = SoftStep(self.input_channel,
-                              self.inputdim, self.nclass, path=path)
-        if torch.cuda.is_available():
-            self.model.cuda(DEVICE)
-        self.model.update_indicators()
-        return
-
-    def train(self):
-        self.model_optimizer = torch.optim.SGD(
-            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
-        self.arch_optimizer = torch.optim.SGD(
-            self.model.arch_parameters(), lr=self.arch_lr, momentum=P_MOMENTUM, weight_decay=self.arch_decay)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            self.model_optimizer, EPOCHS, eta_min=0.001)
-        opt_accu = -1
-        for i in range(EPOCHS):
-            self.model.train()
-            loss_sum = 0
-            scheduler.step()
-            st_time = time()
-            for imgs, label in self.train_loader:
-                if torch.cuda.is_available():
-                    imgs = imgs.cuda(DEVICE)
-                    label = label.cuda(DEVICE)
-                # fine tune model
-                for _ in range(self.order):
-                    arch_opt = False
-                    preds = self.model(imgs, arch_opt)
-                    loss = F.cross_entropy(preds, label)
-                    self.model_optimizer.zero_grad()
-                    loss.backward()
-                    self.model_optimizer.step()
-                # fine tune arch
-                arch_opt = True
-                preds = self.model(imgs, arch_opt)
-                loss = F.cross_entropy(preds, label)
-                self.arch_optimizer.zero_grad()
-                loss.backward()
-                self.arch_optimizer.step()
-                self.model.protect_controller()
-                loss_sum += loss.item() * len(imgs)/self.num_image
-            ed_time = time()
-            # eval
-            val_accu, val_loss = self.val()
-            if val_accu > opt_accu:
-                opt_accu = val_accu
-            # show epoch training message
-            epoch_note = ''
-            # epoch_note = 'Arch' if arch_opt else 'Modl'
-            print(
-                f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}, learning rate:{round(scheduler.get_lr()[0],4)}")
-            # show arch params
-            # if arch_opt:
-            for name, param in self.model.named_parameters():
-                if name.__contains__("alpha"):
-                    print(name, param.item(), param.grad.item())
-            # save arch params
-            current_config = self.model.generate_config()
-            with open(f"log/softstep/{i+1}_o{self.order}_{self.dataset}.json", "w") as f:
-                json.dump(current_config, f)
-        return
-
-
 if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
     # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear.json')
     # print(stat(trainer.model, (3, 32, 32)))
     # model = BottleneckEval(
     # 3, 32, 100, path='config/search_space_bottleneck_eval.json')
-    model = BottleneckEval(
-        3, 32, 100, path='config/search_space_bottleneck_eval.json')
+    # model = BottleneckEval(
+    #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
-    # model = Eval(3, 32, 100, path='log/softstep/141_o1_cifar-100-python.json')
+    # model = Eval(
+    #     3, 32, 100, path='log/softstep_linear_1e-5/194_o1_cifar-100-python.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
-    print(stat(model, (3, 32, 32)))
+    # print(stat(model, (3, 32, 32)))
 
     # model = SoftStep(3, 32, 100, path='config/search_space_linear.json')
     # with open("test.json", "w") as f:
@@ -289,6 +292,7 @@ if __name__ == "__main__":
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
     # print(stat(trainer.model,(3,32,32)))
 
-    # trainer = SoftStepTrainer(SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE)
-    # trainer.generate_struc()
+    trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE)
+    # for name, param in trainer.model.named_parameters():
+    #     print(name)
     pass

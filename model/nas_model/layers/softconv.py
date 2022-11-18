@@ -27,7 +27,7 @@ class SoftConv2d(nn.Module):
         self.channel_alpha_expansion = utils.newton_expansion(
             self.out_channels)
         self.kernel_alpha_expansion = utils.newton_expansion(
-            int(self.kernel_size/2))
+            int(self.kernel_size/2)*9)
         self.reset_parameters()
         # init channel indicators and kernel mask
         self.channel_indicators = None
@@ -176,7 +176,7 @@ class SoftKernelConv2d(nn.Module):
         self.weight = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
         self.kernel_alpha = Parameter(torch.Tensor(1))
-        self.expansion = utils.newton_expansion(int(self.kernel_size/2))
+        self.expansion = utils.newton_expansion(int(self.kernel_size/2)*9)
         self.reset_parameters()
         # init kernel mask
         self.mask = None
