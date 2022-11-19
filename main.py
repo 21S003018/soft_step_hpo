@@ -21,9 +21,9 @@ def softstep_eval(order=1, dataset=CIFAR10):
 
 if __name__ == "__main__":
     '''case evaluation'''
-    trainer = EvalTrainer(
-        CIFAR100, "log/softstep_linear_1e-5/194_o1_cifar-100-python.json")
-    trainer.train()
+#    trainer = EvalTrainer(
+#        CIFAR100, "log/softstep_linear_1e-5/194_o1_cifar-100-python.json")
+#    trainer.train()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)

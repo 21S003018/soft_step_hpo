@@ -133,7 +133,7 @@ class SoftStepTrainer(CNNTrainer):
         self.model_name = model_name
         self.dataset = dataset
         self.order = opt_order
-        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-4
+        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
         self.arch_lr = 0.1 if self.dataset == CIFAR10 else 0.1
         # load data
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
