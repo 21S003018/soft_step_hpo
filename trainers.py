@@ -272,8 +272,9 @@ class NasTrainer(CNNTrainer):
 
 if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
-    # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear.json')
-    # print(stat(trainer.model, (3, 32, 32)))
+    trainer = EvalTrainer(CIFAR100, path='test.json')
+    # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear_eval.json')
+    print(stat(trainer.model, (3, 32, 32)))
     # model = BottleneckEval(
     # 3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = BottleneckEval(
@@ -292,7 +293,7 @@ if __name__ == "__main__":
     # trainer = CNNTrainer(MOBILENET,CIFAR100)
     # print(stat(trainer.model,(3,32,32)))
 
-    trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE)
+    # trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE)
     # for name, param in trainer.model.named_parameters():
     #     print(name)
     pass
