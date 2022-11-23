@@ -695,7 +695,7 @@ class ShallowSoftStep(nn.Module):
         return config
 
     def update_indicators(self):
-        # layer
+        # laye
         self.conv_in.update_channel_indicators()
         self.conv_out.update_channel_indicators()
         # stage
