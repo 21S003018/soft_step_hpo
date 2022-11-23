@@ -321,7 +321,7 @@ class SkipBottleneck(nn.Module):  # skip block
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
         self.conv2 = SoftConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+                                stride=stride, padding=int(kernel_size/2), bias=False)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = nn.Conv2d(hidden_planes, out_planes,
@@ -497,14 +497,14 @@ class BottleneckSoftStep(nn.Module):
 
 
 class Shallow(nn.Module):  # normal block or reduction block
-    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, expansion=4):
+    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, expansion=1):
         super(Shallow, self).__init__()
         self.conv1 = SoftConv2d(
-            in_planes, out_planes, kernel_size=kernel_size, bias=False)
+            in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=int(kernel_size/2), bias=False)
         self.bn1 = nn.BatchNorm2d(out_planes)
 
         self.conv2 = SoftConv2d(out_planes, out_planes, kernel_size=kernel_size,
-                                stride=stride, padding=int(kernel_size/2), bias=False, groups=out_planes)
+                                stride=1, padding=int(kernel_size/2), bias=False)
         self.bn2 = nn.BatchNorm2d(out_planes)
 
     def forward(self, x, arch_opt):
@@ -513,68 +513,54 @@ class Shallow(nn.Module):  # normal block or reduction block
             out = torch.mul(out, self.conv1.channel_indicators)
             out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
             out = torch.mul(out, self.conv2.channel_indicators)
-            out = F.relu6(self.bn3(self.conv3(out)))
-            out = torch.mul(out, self.conv3.channel_indicators)
         else:
             out = F.relu6(self.bn1(self.conv1(x)))
             out = torch.mul(out, self.conv1.channel_indicators.data)
             out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
             out = torch.mul(out, self.conv2.channel_indicators.data)
-            out = F.relu6(self.bn3(self.conv3(out)))
-            out = torch.mul(out, self.conv3.channel_indicators.data)
         return out
 
     def update_indicators(self):
         self.conv1.update_channel_indicators()
+        self.conv1.update_kernel_mask()
         self.conv2.update_channel_indicators()
         self.conv2.update_kernel_mask()
-        self.conv3.update_channel_indicators()
         return
 
     def protect_controller(self):
         self.conv1.protect_controller()
         self.conv2.protect_controller()
-        self.conv3.protect_controller()
         return
 
 
 class SkipShallow(nn.Module):  # skip block
-    def __init__(self, in_planes, hidden_planes, kernel_size=3, stride=1, expansion=4):
+    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, expansion=1):
         super(SkipShallow, self).__init__()
-        out_planes = round(hidden_planes * expansion)
         assert in_planes == out_planes
         assert stride == 1
 
-        self.conv1 = SoftChannelConv2d(
-            in_planes, hidden_planes, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(hidden_planes)
+        self.conv1 = SoftConv2d(
+            in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=int(kernel_size/2), bias=False)
+        self.bn1 = nn.BatchNorm2d(out_planes)
 
-        self.conv2 = SoftConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
-        self.bn2 = nn.BatchNorm2d(hidden_planes)
-
-        self.conv3 = nn.Conv2d(hidden_planes, out_planes,
-                               kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(out_planes)
+        self.conv2 = SoftKernelConv2d(out_planes, out_planes, kernel_size=kernel_size,
+                                      stride=1, padding=int(kernel_size/2), bias=False)
+        self.bn2 = nn.BatchNorm2d(out_planes)
 
     def forward(self, x, arch_opt):
         if arch_opt:
             out = F.relu6(self.bn1(self.conv1(x)))
             out = torch.mul(out, self.conv1.channel_indicators)
             out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
-            out = torch.mul(out, self.conv2.channel_indicators)
-            out = self.bn3(self.conv3(out))
         else:
             out = F.relu6(self.bn1(self.conv1(x)))
             out = torch.mul(out, self.conv1.channel_indicators.data)
             out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
-            out = torch.mul(out, self.conv2.channel_indicators.data)
-            out = self.bn3(self.conv3(out))
         return out
 
     def update_indicators(self):
         self.conv1.update_channel_indicators()
-        self.conv2.update_channel_indicators()
+        self.conv1.update_kernel_mask()
         self.conv2.update_kernel_mask()
         return
 
@@ -585,15 +571,15 @@ class SkipShallow(nn.Module):  # skip block
 
 
 class ShallowStage(nn.Module):
-    def __init__(self, in_planes, hidden_planes, kernel_size, stride, expansion, n_skip):
+    def __init__(self, in_planes, out_planes, kernel_size, stride, expansion, n_skip):
         super(ShallowStage, self).__init__()
         self.stride = stride
-        self.block = Bottleneck(
-            in_planes, hidden_planes, kernel_size=kernel_size, stride=stride, expansion=expansion)
+        self.block = Shallow(
+            in_planes, out_planes, kernel_size=kernel_size, stride=stride)
         skips = []
         for _ in range(n_skip):
-            skips.append(SkipBottleneck(
-                hidden_planes*expansion, hidden_planes, kernel_size=kernel_size, stride=1, expansion=expansion))
+            skips.append(SkipShallow(
+                out_planes, out_planes, kernel_size=kernel_size, stride=1))
         self.skips = nn.Sequential(*skips)
         return
 
@@ -602,11 +588,11 @@ class ShallowStage(nn.Module):
         if arch_opt:
             for skip in self.skips:
                 x = F.relu6(torch.mul(skip(x, arch_opt),
-                            self.block.conv3.channel_indicators) + x)
+                            self.block.conv2.channel_indicators) + x)
         else:
             for skip in self.skips:
                 x = F.relu6(torch.mul(skip(x, arch_opt),
-                            self.block.conv3.channel_indicators.data) + x)
+                            self.block.conv2.channel_indicators.data) + x)
         return x
 
     def update_indicators(self):
@@ -639,7 +625,7 @@ class ShallowSoftStep(nn.Module):
         for stage_config in config["stage"]:
             e, c, n, k, s = stage_config['e'], stage_config['c'], stage_config['n'], stage_config['k'], stage_config['s']
             hidden_planes = c
-            stages.append(BottleneckStage(
+            stages.append(ShallowStage(
                 in_planes, hidden_planes, kernel_size=k, stride=s, expansion=e, n_skip=n-1))
             in_planes = hidden_planes*e
         self.stages = nn.Sequential(*stages)
@@ -692,18 +678,18 @@ class ShallowSoftStep(nn.Module):
             config["block"].append({
                 "type": "normal" if stage.stride == 1 else "reduction",
                 "c1": stage.block.conv1.out_channels if full else int(stage.block.conv1.channel_alpha*stage.block.conv1.out_channels),
-                "k": stage.block.conv2.kernel_size if full else int(stage.block.conv2.kernel_alpha*int(stage.block.conv2.kernel_size/2))*2+1,
+                "k1": stage.block.conv1.kernel_size if full else int(stage.block.conv1.kernel_alpha*int(stage.block.conv1.kernel_size/2))*2+1,
                 "c2": stage.block.conv2.out_channels if full else int(stage.block.conv2.channel_alpha*stage.block.conv2.out_channels),
-                "c3": stage.block.conv3.out_channels if full else int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
+                "k2": stage.block.conv2.kernel_size if full else int(stage.block.conv2.kernel_alpha*int(stage.block.conv2.kernel_size/2))*2+1,
                 "s": stage.stride
             })
             for skip in stage.skips:
                 config["block"].append({
                     "type": "skip",
                     "c1": skip.conv1.out_channels if full else int(skip.conv1.channel_alpha*skip.conv1.out_channels),
-                    "k": skip.conv2.kernel_size if full else int(skip.conv2.kernel_alpha*int(skip.conv2.kernel_size/2))*2+1,
-                    "c2": skip.conv2.out_channels if full else int(skip.conv2.channel_alpha*skip.conv2.out_channels),
-                    "c3": stage.block.conv3.out_channels if full else int(stage.block.conv3.channel_alpha*stage.block.conv3.out_channels),
+                    "k1": skip.conv1.kernel_size if full else int(skip.conv1.kernel_alpha*int(skip.conv1.kernel_size/2))*2+1,
+                    "c2": stage.block.conv2.out_channels if full else int(stage.block.conv2.channel_alpha*stage.block.conv2.out_channels),
+                    "k2": skip.conv2.kernel_size if full else int(skip.conv2.kernel_alpha*int(skip.conv2.kernel_size/2))*2+1,
                     "s": 1
                 })
         return config
