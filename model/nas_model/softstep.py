@@ -271,7 +271,7 @@ class Bottleneck(nn.Module):  # normal block or reduction block
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
         self.conv2 = SoftConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+                                stride=stride, padding=int(kernel_size/2), bias=False)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = SoftChannelConv2d(hidden_planes, out_planes,

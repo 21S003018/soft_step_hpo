@@ -280,16 +280,16 @@ if __name__ == "__main__":
     # print(stat(trainer.model, (3, 32, 32)))
     # model = BottleneckEval(
     # 3, 32, 100, path='config/search_space_bottleneck_eval.json')
-    # model = BottleneckEval(
-    #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
+    model = BottleneckEval(
+        3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
     # model = Eval(
     #     3, 32, 100, path='log/softstep_linear_1e-5_expansion4/192_o1_cifar-100-python.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
-    # print(stat(model, (3, 32, 32)))
+    print(stat(model, (3, 32, 32)))
 
-    # model = SoftStep(3, 32, 100, path='config/search_space_linear.json')
+    # model = BottleneckSoftStep(3, 32, 100, path='config/search_space_bottleneck.json')
     # with open("test.json", "w") as f:
     #     json.dump(model.generate_config(True), f)
 
