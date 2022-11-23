@@ -122,7 +122,22 @@ def analyse_trainloss(path, order=1):
     return
 
 
+def analyse_search_time(path,):
+    pattern_time = re.compile("time:(\d+.\d+),")
+    with open(path, "r") as f:
+        data = f.readlines()
+    tot_time = 0
+    for line in data:
+        try:
+            tot_time += float(re.findall(pattern_time, line)[0])
+        except:
+            pass
+    print(tot_time/3600)
+    return
+
+
 if __name__ == "__main__":
     # analyse_trainloss("log/softstep_linear_o2_cifar10.log", order=2)
-    analyse_trainloss("log/softstep_linear_o1_cifar100_3reduction.log")
+    # analyse_trainloss("log/softstep_linear_o1_cifar100_3reduction.log")
+    analyse_search_time("log/softstep_linear_o1_cifar100_1e-4.log")
     pass

@@ -39,8 +39,6 @@ class CNNTrainer():
             self.load_model()
         self.optimizer = torch.optim.SGD(
             self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
-        # lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
-        #     self.optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             self.optimizer, EPOCHS, eta_min=0.001)
         opt_accu = -1
@@ -139,8 +137,13 @@ class SoftStepTrainer(CNNTrainer):
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
         # init model
-        self.model = SoftStep(self.input_channel,
-                              self.inputdim, self.nclass, path=path)
+        if path == LINEARSEARCHSPACE:
+            self.model = SoftStep(self.input_channel,
+                                  self.inputdim, self.nclass, path=path)
+        elif path == BOTTLENECKSEARCHSPACE:
+            self.model = BottleneckSoftStep(self.input_channel,
+                                            self.inputdim, self.nclass, path=path)
+
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
         self.model.update_indicators()
@@ -223,8 +226,8 @@ class NasTrainer(CNNTrainer):
             self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM)
         self.arch_optimizer = torch.optim.SGD(
             self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM)
-        lr_schedular = torch.optim.lr_scheduler.MultiStepLR(
-            self.model_optimizer, milestones=[EPOCHS * 0.5, EPOCHS * 0.75], gamma=0.1)
+        lr_schedular = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.model_optimizer, EPOCHS, eta_min=0.001)
         opt_accu = -1
         for i in range(EPOCHS):
             self.model.train()
@@ -272,16 +275,16 @@ class NasTrainer(CNNTrainer):
 
 if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
-    trainer = EvalTrainer(CIFAR100, path='test.json')
+    # trainer = EvalTrainer(CIFAR100, path='test.json')
     # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear_eval.json')
-    print(stat(trainer.model, (3, 32, 32)))
+    # print(stat(trainer.model, (3, 32, 32)))
     # model = BottleneckEval(
     # 3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = BottleneckEval(
     #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
     # model = Eval(
-    #     3, 32, 100, path='log/softstep_linear_1e-5/194_o1_cifar-100-python.json')
+    #     3, 32, 100, path='log/softstep_linear_1e-5_expansion4/192_o1_cifar-100-python.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
     # print(stat(model, (3, 32, 32)))

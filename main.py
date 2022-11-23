@@ -21,9 +21,29 @@ def softstep_eval(order=1, dataset=CIFAR10):
 
 if __name__ == "__main__":
     '''case evaluation'''
-#    trainer = EvalTrainer(
-#        CIFAR100, "log/softstep_linear_1e-5/194_o1_cifar-100-python.json")
-#    trainer.train()
+    # trainer = EvalTrainer(
+    #     CIFAR100, "log/softstep_linear_1e-5/194_o1_cifar-100-python.json")
+    # trainer.train()
+    # print("softstep_linear_1e-4/192_o1_cifar-100-python")
+    # trainer = EvalTrainer(
+    #     CIFAR100, "log/softstep_linear_1e-4/192_o1_cifar-100-python.json")
+    # trainer.train()
+    # print("softstep_linear_1e-4/200_o1_cifar-100-python")
+    # trainer = EvalTrainer(
+    #     CIFAR100, "log/softstep_linear_1e-4/200_o1_cifar-100-python.json")
+    # trainer.train()
+    # print("softstep_linear_1e-5_fixkernel/191_o1_cifar-100-python")
+    # trainer = EvalTrainer(
+    #     CIFAR100, "log/softstep_linear_1e-5_fixkernel/191_o1_cifar-100-python.json")
+    # trainer.train()
+    # print("softstep_linear_1e-5_fixkernel/200_o1_cifar-100-python")
+    # trainer = EvalTrainer(
+    #     CIFAR100, "log/softstep_linear_1e-5_fixkernel/200_o1_cifar-100-python.json")
+    # trainer.train()
+    # print("softstep_linear_o1_cifar10_1e-4/198_o1_cifar-10-batches-py")
+    # trainer = EvalTrainer(
+    #     CIFAR10, "log/softstep_linear_o1_cifar10_1e-4/198_o1_cifar-10-batches-py.json")
+    # trainer.train()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
@@ -39,15 +59,9 @@ if __name__ == "__main__":
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=1)
     # trainer.train()
-    # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=2)
-    # trainer.train()
     trainer = SoftStepTrainer(
-        SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=1)
+        SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1)
     trainer.train()
-    # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE, opt_order=2)
-    # trainer.train()
     '''softstep(linear,o1,cifar10) evaluation'''
     # softstep_eval(1, CIFAR10)
     '''softstep(linear,o2,cifar10) evaluation'''
@@ -63,13 +77,7 @@ if __name__ == "__main__":
     #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
     # trainer.train()
     # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=2)
-    # trainer.train()
-    # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1)
-    # trainer.train()
-    # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=2)
     # trainer.train()
     '''softstep(bottleneck,o1,cifar10) evaluation'''
     # softstep_eval(1, CIFAR10)
