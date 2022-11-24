@@ -1,0 +1,14 @@
+Files already downloaded and verified
+Files already downloaded and verified
+Epoch~1->train_loss:4.7484, val_loss:4.4795, val_accu:0.0183, time:113.5431
+Epoch~2->train_loss:4.1811, val_loss:4.0007, val_accu:0.0685, time:110.7231
+Epoch~3->train_loss:3.8743, val_loss:3.727, val_accu:0.1074, time:112.7038
+Epoch~4->train_loss:3.5678, val_loss:3.2894, val_accu:0.1963, time:115.0358
+Epoch~5->train_loss:3.195, val_loss:2.9125, val_accu:0.267, time:112.4185
+Epoch~6->train_loss:2.8432, val_loss:2.6579, val_accu:0.3143, time:113.541
+Epoch~7->train_loss:2.5551, val_loss:2.4833, val_accu:0.3583, time:111.8434
+Epoch~8->train_loss:2.344, val_loss:2.3225, val_accu:0.3897, time:112.026
+Epoch~9->train_loss:2.1904, val_loss:2.1501, val_accu:0.4257, time:111.297
+Epoch~10->train_loss:2.0547, val_loss:2.1305, val_accu:0.4308, time:116.6401
+Epoch~11->train_loss:1.9472, val_loss:2.0734, val_accu:0.4609, time:109.0207
+Epoch~12->train_loss:1.8616, val_loss:1.9499, val_accu:0.4832, time:112.6563
