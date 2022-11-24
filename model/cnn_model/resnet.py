@@ -48,19 +48,19 @@ class Bottleneck(nn.Module):
         self.stride = stride
         self.in_planes = in_planes
         self.out_planes = self.expansion*planes
-        if stride != 1 or in_planes != self.expansion*planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion*planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion*planes)
-            )
+        # if stride != 1 or in_planes != self.expansion*planes:
+        #     self.shortcut = nn.Sequential(
+        #         nn.Conv2d(in_planes, self.expansion*planes,
+        #                   kernel_size=1, stride=stride, bias=False),
+        #         nn.BatchNorm2d(self.expansion*planes)
+        #     )
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
         out = F.relu(self.bn2(self.conv2(out)))
         out = self.bn3(self.conv3(out))
-        # if self.stride == 1 and self.in_planes == self.out_planes:
-        out += self.shortcut(x)
+        if self.stride == 1 and self.in_planes == self.out_planes:
+            out += self.shortcut(x)
         out = F.relu(out)
         return out
 
