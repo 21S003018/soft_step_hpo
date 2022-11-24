@@ -40,6 +40,7 @@ MOBILENET = "MobileNetV2"
 SOFTSTEP = "SoftStep"
 
 # struc config
+SHALLOWSEARCHSPACE = "config/search_space_shallow.json"
 BOTTLENECKSEARCHSPACE = "config/search_space_bottleneck.json"
 LINEARSEARCHSPACE = "config/search_space_linear.json"
 SEARCHSPACE = "config/search_space.json"

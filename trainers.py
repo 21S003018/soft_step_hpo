@@ -10,7 +10,7 @@ from time import time
 from torchstat import stat
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
-from model.cnn_model.eval import Eval, BottleneckEval, ShallowEval
+from model.cnn_model.eval import Eval, BottleneckEval, ShallowEval, get_block_type
 from model.nas_model.softstep import SoftStep, BottleneckSoftStep, ShallowSoftStep
 warnings.filterwarnings("ignore")
 
@@ -114,8 +114,17 @@ class EvalTrainer(CNNTrainer):
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
         # model
-        self.model = Eval(self.input_channel,
-                          self.inputdim, self.nclass, path)
+        block_type = get_block_type(path)
+        if block_type == "linear":
+            self.model = Eval(self.input_channel,
+                              self.inputdim, self.nclass, path)
+        elif block_type == "bottleneck":
+            self.model = BottleneckEval(
+                self.input_channel, self.inputdim, self.nclass, path)
+        elif block_type == "shallow":
+            self.model = ShallowEval(
+                self.input_channel, self.inputdim, self.nclass, path)
+
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
         path_item = path.split("/")[-1]
@@ -132,7 +141,7 @@ class SoftStepTrainer(CNNTrainer):
         self.dataset = dataset
         self.order = opt_order
         self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
-        self.arch_lr = 0.1 if self.dataset == CIFAR10 else 0.1
+        self.arch_lr = 0.1
         # load data
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
@@ -143,6 +152,9 @@ class SoftStepTrainer(CNNTrainer):
         elif path == BOTTLENECKSEARCHSPACE:
             self.model = BottleneckSoftStep(self.input_channel,
                                             self.inputdim, self.nclass, path=path)
+        elif path == SHALLOWSEARCHSPACE:
+            self.model = ShallowSoftStep(self.input_channel,
+                                         self.inputdim, self.nclass, path=path)
 
         if torch.cuda.is_available():
             self.model.cuda(DEVICE)
@@ -278,15 +290,15 @@ if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='test.json')
     # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear_eval.json')
     # print(stat(trainer.model, (3, 32, 32)))
+    model = BottleneckEval(
+        3, 32, 100, path='config/search_space_bottleneck_eval.json')
+    # model = ShallowEval(
+    #     3, 32, 100, path='config/search_space_shallow_eval.json')
     # model = BottleneckEval(
-    # 3, 32, 100, path='config/search_space_bottleneck_eval.json')
-    model = ShallowEval(
-        3, 32, 100, path='config/search_space_shallow_eval.json')
-    # model = BottleneckEval(
-    # 3, 32, 100, path='log/softstep/108_o1_cifar-100-python.json')
+    #     3, 32, 100, path='log/softstep/143_o1_cifar-100-python.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
     # model = Eval(
-    #     3, 32, 100, path='log/softstep_linear_1e-5_expansion4/192_o1_cifar-100-python.json')
+    #     3, 32, 100, path='search_result/softstep_linear_cifar100_1e-5.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
     print(stat(model, (3, 32, 32)))

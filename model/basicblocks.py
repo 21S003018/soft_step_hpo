@@ -34,7 +34,7 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_planes, c1, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(c1)
-
+        # assert c1 == c2
         self.conv2 = nn.Conv2d(c1, c2, kernel_size=kernel_size,
                                stride=stride, padding=int(kernel_size/2), bias=False)
         self.bn2 = nn.BatchNorm2d(c2)
