@@ -123,3 +123,9 @@ class ShallowEval(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
+
+
+def get_block_type(path):
+    with open(path, "r") as f:
+        data = json.load(f)
+    return data["type"]
