@@ -60,11 +60,17 @@ class BottleneckEval(nn.Module):
         out_planes = output_channel
         blocks = []
         for block_config in config["block"]:
-            t, c1, k, c2, c3, s = block_config['type'], block_config[
-                'c1'], block_config['k'], block_config['c2'], block_config['c3'], block_config['s']
+            # t, c1, k, c2, c3, s = block_config['type'], block_config[
+            #     'c1'], block_config['k'], block_config['c2'], block_config['c3'], block_config['s']
+            t, c1, k, c2, s = block_config['type'], block_config[
+                'c1'], block_config['k'], block_config['c2'], block_config['s']
             in_planes = out_planes
-            out_planes = c3
-            blocks.append(block(in_planes, c1, c2, c3, k, s, t))
+            # out_planes = c3
+            out_planes = c2
+            # blocks.append(block(in_planes, c1, c2, c3, k, s, t))
+            hidden_planes = c1
+            blocks.append(block(
+                in_planes, hidden_planes, kernel_size=k, stride=s, expansion=out_planes/hidden_planes, type=t))
         self.blocks = nn.Sequential(*blocks)
         # post conv
         input_channel = out_planes
