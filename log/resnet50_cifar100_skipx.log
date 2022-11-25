@@ -269,3 +269,6 @@ Epoch~64->train_loss:0.8594, val_loss:1.2682, val_accu:0.6533, time:102.7212
 Epoch~65->time:104.3875
 Epoch~66->time:105.245
 Epoch~67->time:101.5093
+Epoch~68->time:106.5776
+Epoch~69->train_loss:0.8139, val_loss:1.3062, val_accu:0.6568, time:109.4681
+Epoch~70->time:109.2444
