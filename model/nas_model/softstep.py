@@ -281,6 +281,11 @@ class Bottleneck(nn.Module):  # normal block or reduction block
                                        kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
+        self.short_cut = nn.Sequential(
+            nn.Conv2d(in_planes,out_planes,kernel_size=1,stride=stride,bias=False),
+            nn.BatchNorm2d(out_planes)
+        )
+
     def forward(self, x, arch_opt):
         if arch_opt:
             out = F.relu6(self.bn1(self.conv1(x)))
@@ -289,7 +294,7 @@ class Bottleneck(nn.Module):  # normal block or reduction block
             # out = torch.mul(out, self.conv2.channel_indicators)
             out = torch.mul(out, self.conv1.channel_indicators)
 
-            out = F.relu6(self.bn3(self.conv3(out)))
+            out = F.relu6(self.bn3(self.conv3(out))+self.short_cut(x))
             out = torch.mul(out, self.conv3.channel_indicators)
         else:
             out = F.relu6(self.bn1(self.conv1(x)))
@@ -298,7 +303,7 @@ class Bottleneck(nn.Module):  # normal block or reduction block
             # out = torch.mul(out, self.conv2.channel_indicators.data)
             out = torch.mul(out, self.conv1.channel_indicators.data)
 
-            out = F.relu6(self.bn3(self.conv3(out)))
+            out = F.relu6(self.bn3(self.conv3(out))+self.short_cut(x))
             out = torch.mul(out, self.conv3.channel_indicators.data)
         return out
 
