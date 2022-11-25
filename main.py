@@ -48,8 +48,8 @@ if __name__ == "__main__":
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
-    # trainer = CNNTrainer(MOBILENET, CIFAR100)
-    # trainer.train()
+    trainer = CNNTrainer(MOBILENET, CIFAR100)
+    trainer.train()
     '''resnet evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
