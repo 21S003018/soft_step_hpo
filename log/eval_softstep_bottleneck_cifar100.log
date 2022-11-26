@@ -201,3 +201,18 @@ Epoch~197->time:105.927
 Epoch~198->time:104.0178
 Epoch~199->time:106.2808
 Epoch~200->time:108.0601
+softstep_bottleneck_cifar100/192_o1_cifar-100-python
+Files already downloaded and verified
+Files already downloaded and verified
+Epoch~1->train_loss:3.874, val_loss:3.2794, val_accu:0.1939, time:100.528
+Epoch~2->train_loss:2.9921, val_loss:2.6841, val_accu:0.305, time:92.5073
+Epoch~3->train_loss:2.4053, val_loss:2.1299, val_accu:0.4275, time:98.0203
+Epoch~4->train_loss:2.0529, val_loss:1.8767, val_accu:0.4847, time:98.9403
+Epoch~5->train_loss:1.8348, val_loss:1.8304, val_accu:0.4977, time:98.1554
+Epoch~6->train_loss:1.6829, val_loss:1.6512, val_accu:0.5407, time:100.4215
+Epoch~7->train_loss:1.5742, val_loss:1.6094, val_accu:0.5597, time:98.527
+Epoch~8->train_loss:1.4967, val_loss:1.5605, val_accu:0.5676, time:99.6309
+Epoch~9->train_loss:1.4306, val_loss:1.4873, val_accu:0.5859, time:99.0124
+Epoch~10->train_loss:1.379, val_loss:1.5005, val_accu:0.5957, time:98.6716
+Epoch~11->train_loss:1.3334, val_loss:1.4088, val_accu:0.6081, time:98.7014
+Epoch~12->train_loss:1.2917, val_loss:1.3843, val_accu:0.6141, time:102.6123
