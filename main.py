@@ -44,9 +44,13 @@ if __name__ == "__main__":
     # trainer = EvalTrainer(
     #     CIFAR10, "log/softstep_linear_o1_cifar10_1e-4/198_o1_cifar-10-batches-py.json")
     # trainer.train()
-    print("softstep_bottleneck_cifar100/198_o1_cifar-100-python")
+    print("softstep_bottleneck_cifar100/200_o1_cifar-100-python")
     trainer = EvalTrainer(
-        CIFAR100, "log/softstep_bottleneck_cifar100/198_o1_cifar-100-python.json")
+        CIFAR100, "log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json")
+    trainer.train()
+    print("softstep_bottleneck_cifar100/192_o1_cifar-100-python")
+    trainer = EvalTrainer(
+        CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json")
     trainer.train()
 
     '''mobilenetv2 evaluation'''
