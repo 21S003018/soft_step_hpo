@@ -1,4 +1,48 @@
-softstep_bottleneck_cifar100/200_o1_cifar-100-python
 Files already downloaded and verified
 Files already downloaded and verified
-Epoch~1->train_loss:3.8306, val_loss:3.219, val_accu:0.2019, time:113.6253
+Epoch~1->train_loss:3.8278, val_loss:3.2123, val_accu:0.2036, time:102.0978
+Epoch~2->train_loss:2.9125, val_loss:2.5893, val_accu:0.3227, time:107.0585
+Epoch~3->train_loss:2.3462, val_loss:2.0961, val_accu:0.4361, time:106.108
+Epoch~4->train_loss:2.0176, val_loss:1.8307, val_accu:0.4885, time:105.6293
+Epoch~5->train_loss:1.8045, val_loss:1.7716, val_accu:0.5128, time:108.7715
+Epoch~6->train_loss:1.668, val_loss:1.5922, val_accu:0.555, time:107.6389
+Epoch~7->time:105.5814
+Epoch~8->train_loss:1.4812, val_loss:1.4682, val_accu:0.5841, time:107.1207
+Epoch~9->train_loss:1.4251, val_loss:1.4736, val_accu:0.5866, time:108.2354
+Epoch~10->train_loss:1.3712, val_loss:1.4586, val_accu:0.5931, time:108.3842
+Epoch~11->train_loss:1.3357, val_loss:1.4689, val_accu:0.5951, time:107.8297
+Epoch~12->time:108.2073
+Epoch~13->train_loss:1.258, val_loss:1.3863, val_accu:0.6078, time:108.3466
+Epoch~14->train_loss:1.2221, val_loss:1.3791, val_accu:0.6151, time:106.8935
+Epoch~15->train_loss:1.1975, val_loss:1.3356, val_accu:0.6263, time:110.8674
+Epoch~16->train_loss:1.1674, val_loss:1.3101, val_accu:0.6346, time:104.7629
+Epoch~17->time:107.4653
+Epoch~18->time:105.5773
+Epoch~19->time:109.7719
+Epoch~20->time:107.4275
+Epoch~21->time:107.6597
+Epoch~22->train_loss:1.0576, val_loss:1.284, val_accu:0.6479, time:108.8086
+Epoch~23->time:107.5872
+Epoch~24->time:106.5834
+Epoch~25->time:105.8526
+Epoch~26->time:106.7966
+Epoch~27->time:107.6367
+Epoch~28->time:109.6161
+Epoch~29->train_loss:0.9661, val_loss:1.2593, val_accu:0.6551, time:106.4539
+Epoch~30->time:106.7385
+Epoch~31->time:107.3689
+Epoch~32->time:103.1921
+Epoch~33->time:107.3209
+Epoch~34->time:105.683
+Epoch~35->time:108.1671
+Epoch~36->train_loss:0.891, val_loss:1.2329, val_accu:0.6632, time:107.8572
+Epoch~37->time:107.4906
+Epoch~38->time:106.6327
+Epoch~39->time:107.866
+Epoch~40->time:105.1733
+Epoch~41->time:107.3525
+Epoch~42->time:110.0297
+Epoch~43->time:107.5119
+Epoch~44->time:106.3264
+Epoch~45->time:106.8126
+Epoch~46->train_loss:0.8317, val_loss:1.2352, val_accu:0.6675, time:101.9385
