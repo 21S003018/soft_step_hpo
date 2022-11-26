@@ -37,7 +37,7 @@ class ResidualBlock(nn.Module):
         self.bn1 = nn.BatchNorm2d(hidden_planes)
         # assert c1 == c2
         self.conv2 = nn.Conv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                               stride=stride, padding=int(kernel_size/2), bias=False,groups=hidden_planes)
+                               stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = nn.Conv2d(hidden_planes, out_planes, kernel_size=1, bias=False)

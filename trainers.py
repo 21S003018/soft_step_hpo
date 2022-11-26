@@ -8,7 +8,7 @@ from const import *
 from utils import Data, num_image
 from time import time
 from torchstat import stat
-import thop,torchsummary
+# import thop,torchsummary
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
 from model.cnn_model.eval import Eval, BottleneckEval, ShallowEval, get_block_type
@@ -300,12 +300,12 @@ if __name__ == "__main__":
 
     # model = ShallowEval(
     #     3, 32, 100, path='config/search_space_shallow_eval.json')
-    # model = BottleneckEval(
-    #     3, 32, 100, path='log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json')
+    model = BottleneckEval(
+        3, 32, 100, path='log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
     # model = Eval(
     #     3, 32, 100, path='search_result/softstep_linear_cifar100_1e-5.json')
-    model = ResNet(3, 32, 100)
+    # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
     print(stat(model, (3, 32, 32)))
     # thop.profile(model, inputs=torch.randn((1,3,32,32)))
