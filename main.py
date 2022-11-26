@@ -64,9 +64,9 @@ if __name__ == "__main__":
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR10, path=LINEARSEARCHSPACE, opt_order=1)
     # trainer.train()
-    trainer = SoftStepTrainer(
-        SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1)
-    trainer.train()
+    # trainer = SoftStepTrainer(
+    #     SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1)
+    # trainer.train()
     '''softstep(linear,o1,cifar10) evaluation'''
     # softstep_eval(1, CIFAR10)
     '''softstep(linear,o2,cifar10) evaluation'''
