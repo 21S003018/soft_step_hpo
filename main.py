@@ -62,8 +62,8 @@ if __name__ == "__main__":
     '''resnet evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
-    trainer = CNNTrainer(RESNET, CIFAR100)
-    trainer.train()
+    # trainer = CNNTrainer(RESNET, CIFAR100)
+    # trainer.train()
     '''linear searchspace evaluation'''
     # trainer = EvalTrainer(CIFAR10, "config/search_space_eval.json")
     # trainer.train()
