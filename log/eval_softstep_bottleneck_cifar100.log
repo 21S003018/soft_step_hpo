@@ -1,0 +1,4 @@
+softstep_bottleneck_cifar100/200_o1_cifar-100-python
+Files already downloaded and verified
+Files already downloaded and verified
+Epoch~1->train_loss:3.8306, val_loss:3.219, val_accu:0.2019, time:113.6253
