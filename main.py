@@ -49,10 +49,10 @@ if __name__ == "__main__":
     # trainer = EvalTrainer(
     #     CIFAR100, "log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json")
     # trainer.train()
-    # print("softstep_bottleneck_cifar100/192_o1_cifar-100-python")
-    # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json")
-    # trainer.train()
+    print("softstep_bottleneck_cifar100/192_o1_cifar-100-python")
+    trainer = EvalTrainer(
+        CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json")
+    trainer.train()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
     # trainer.train()
-    trainer = SoftStepTrainer(
-        SOFTSTEP, CIFAR100, path=SHALLOWSEARCHSPACE, opt_order=1)
-    trainer.train()
+    # trainer = SoftStepTrainer(
+    #     SOFTSTEP, CIFAR100, path=SHALLOWSEARCHSPACE, opt_order=1)
+    # trainer.train()
     pass
