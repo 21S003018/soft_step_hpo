@@ -292,10 +292,15 @@ if __name__ == "__main__":
     # print(stat(trainer.model, (3, 32, 32)))
     # model = BottleneckEval(
     #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
+    # model = BottleneckSoftStep(3,32,100,BOTTLENECKSEARCHSPACE)
+    # config = model.generate_config(full=True)
+    # with open("test.json", "w") as f:
+    #     json.dump(config, f)
+
     # model = ShallowEval(
     #     3, 32, 100, path='config/search_space_shallow_eval.json')
     model = BottleneckEval(
-        3, 32, 100, path='log/softstep/161_o1_cifar-100-python.json')
+        3, 32, 100, path='log/softstep_bottleneck_cifar100/191_o1_cifar-100-python.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
     # model = Eval(
     #     3, 32, 100, path='search_result/softstep_linear_cifar100_1e-5.json')
