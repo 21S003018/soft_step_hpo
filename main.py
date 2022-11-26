@@ -44,14 +44,15 @@ if __name__ == "__main__":
     # trainer = EvalTrainer(
     #     CIFAR10, "log/softstep_linear_o1_cifar10_1e-4/198_o1_cifar-10-batches-py.json")
     # trainer.train()
-    print("softstep_bottleneck_cifar100/200_o1_cifar-100-python")
-    trainer = EvalTrainer(
-        CIFAR100, "log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json")
-    trainer.train()
-    print("softstep_bottleneck_cifar100/192_o1_cifar-100-python")
-    trainer = EvalTrainer(
-        CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json")
-    trainer.train()
+
+    # print("softstep_bottleneck_cifar100/200_o1_cifar-100-python")
+    # trainer = EvalTrainer(
+    #     CIFAR100, "log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json")
+    # trainer.train()
+    # print("softstep_bottleneck_cifar100/192_o1_cifar-100-python")
+    # trainer = EvalTrainer(
+    #     CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json")
+    # trainer.train()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
@@ -61,8 +62,8 @@ if __name__ == "__main__":
     '''resnet evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
-    # trainer = CNNTrainer(RESNET, CIFAR100)
-    # trainer.train()
+    trainer = CNNTrainer(RESNET, CIFAR100)
+    trainer.train()
     '''linear searchspace evaluation'''
     # trainer = EvalTrainer(CIFAR10, "config/search_space_eval.json")
     # trainer.train()

@@ -8,6 +8,7 @@ from const import *
 from utils import Data, num_image
 from time import time
 from torchstat import stat
+import thop,torchsummary
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
 from model.cnn_model.eval import Eval, BottleneckEval, ShallowEval, get_block_type
@@ -307,6 +308,8 @@ if __name__ == "__main__":
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
     print(stat(model, (3, 32, 32)))
+    # thop.profile(model, inputs=torch.randn((1,3,32,32)))
+    # torchsummary.summary(model,(3,32,32))
 
     # model = ShallowSoftStep(
     #     3, 32, 100, path='config/search_space_shallow.json')
