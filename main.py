@@ -57,8 +57,8 @@ if __name__ == "__main__":
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
-    trainer = CNNTrainer(MOBILENET, CIFAR100)
-    trainer.train()
+    # trainer = CNNTrainer(MOBILENET, CIFAR100)
+    # trainer.train()
     '''resnet evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
@@ -97,4 +97,12 @@ if __name__ == "__main__":
     # softstep_eval(1, CIFAR10)
     '''softstep(bottleneck,o2,cifar10) evaluation'''
     # softstep_eval(2, CIFAR10)
+
+    '''softstep search shallow searchspace'''
+    # trainer = SoftStepTrainer(
+    #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
+    # trainer.train()
+    trainer = SoftStepTrainer(
+        SOFTSTEP, CIFAR100, path=SHALLOWSEARCHSPACE, opt_order=1)
+    trainer.train()
     pass
