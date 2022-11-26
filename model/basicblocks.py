@@ -39,6 +39,7 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_planes, hidden_planes, kernel_size=3, stride=1, expansion=None, type="normal"):
         super(ResidualBlock, self).__init__()
         out_planes = round(hidden_planes * expansion)
+        # hidden_planes = round(hidden_planes * 2)
         self.conv1 = nn.Conv2d(in_planes, hidden_planes,
                                kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(hidden_planes)
