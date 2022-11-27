@@ -161,3 +161,8 @@ Epoch~157->time:81.0392
 Epoch~158->train_loss:0.0118, val_loss:0.959, val_accu:0.7766, time:80.4316
 Epoch~159->train_loss:0.0105, val_loss:0.9496, val_accu:0.7774, time:80.3938
 Epoch~160->time:80.0119
+Epoch~161->train_loss:0.0096, val_loss:0.9331, val_accu:0.7792, time:79.9058
+Epoch~162->time:79.8057
+Epoch~163->train_loss:0.0078, val_loss:0.9142, val_accu:0.7834, time:80.4445
+Epoch~164->time:80.9678
+Epoch~165->train_loss:0.007, val_loss:0.8934, val_accu:0.7851, time:81.7038
