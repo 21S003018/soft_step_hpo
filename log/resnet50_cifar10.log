@@ -86,3 +86,4 @@ Epoch~83->time:42.8598
 Epoch~84->time:42.8232
 Epoch~85->time:42.7886
 Epoch~86->train_loss:0.1012, val_loss:0.3423, val_accu:0.9046, time:42.7848
+Epoch~87->time:43.236
