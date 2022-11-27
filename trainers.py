@@ -21,7 +21,8 @@ class CNNTrainer():
     specify for a dataset and a model
     """
 
-    def __init__(self, model_name, dataset) -> None:
+    def __init__(self, model_name, dataset, device="cuda:0") -> None:
+        self.device = device
         # data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
@@ -31,7 +32,7 @@ class CNNTrainer():
         self.model = eval(self.model_name)(
             self.input_channel, self.inputdim, self.nclass)
         if torch.cuda.is_available():
-            self.model.cuda(DEVICE)
+            self.model.cuda(self.device)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         pass
 
@@ -50,8 +51,8 @@ class CNNTrainer():
             st_time = time()
             for imgs, label in self.train_loader:
                 if torch.cuda.is_available():
-                    imgs = imgs.cuda(DEVICE)
-                    label = label.cuda(DEVICE)
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
                 preds = self.model(imgs)
                 loss = F.cross_entropy(preds, label)
                 self.optimizer.zero_grad()
@@ -78,8 +79,8 @@ class CNNTrainer():
         valloss = 0
         for imgs, label in self.test_loader:
             if torch.cuda.is_available():
-                imgs = imgs.cuda(DEVICE)
-                label = label.cuda(DEVICE)
+                imgs = imgs.cuda(self.device)
+                label = label.cuda(self.device)
             preds = self.model(imgs)
             ncorrect += torch.sum(preds.max(1)[1].eq(label).double())
             nsample += len(label)
@@ -109,7 +110,7 @@ class EvalTrainer(CNNTrainer):
     specify for a dataset and a model
     """
 
-    def __init__(self, dataset, path: str = None) -> None:
+    def __init__(self, dataset, path: str = None,device="cuda:0") -> None:
         # data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
@@ -127,7 +128,7 @@ class EvalTrainer(CNNTrainer):
                 self.input_channel, self.inputdim, self.nclass, path)
 
         if torch.cuda.is_available():
-            self.model.cuda(DEVICE)
+            self.model.cuda(self.device)
         path_item = path.split("/")[-1]
         path_item = path_item.replace(".json", "")
         self.save_model_path = f"ckpt/{path_item}_{dataset}.pkl"
@@ -135,12 +136,13 @@ class EvalTrainer(CNNTrainer):
 
 
 class SoftStepTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None, opt_order=1) -> None:
+    def __init__(self, model_name, dataset, path=None, opt_order=1,device="cuda:0") -> None:
         # config
         self.path = path
         self.model_name = model_name
         self.dataset = dataset
         self.order = opt_order
+        self.device = device
         self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
         self.arch_lr = 0.1
         # load data
@@ -158,7 +160,7 @@ class SoftStepTrainer(CNNTrainer):
                                          self.inputdim, self.nclass, path=path)
 
         if torch.cuda.is_available():
-            self.model.cuda(DEVICE)
+            self.model.cuda(self.device)
         self.model.update_indicators()
         return
 
@@ -177,8 +179,8 @@ class SoftStepTrainer(CNNTrainer):
             st_time = time()
             for imgs, label in self.train_loader:
                 if torch.cuda.is_available():
-                    imgs = imgs.cuda(DEVICE)
-                    label = label.cuda(DEVICE)
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
                 # fine tune model
                 for _ in range(self.order):
                     arch_opt = False
@@ -219,7 +221,8 @@ class SoftStepTrainer(CNNTrainer):
 
 
 class NasTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None) -> None:
+    def __init__(self, model_name, dataset, path=None, device="cuda:0") -> None:
+        self.device = device
         # load data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
@@ -229,7 +232,7 @@ class NasTrainer(CNNTrainer):
         self.model = SoftStep(self.input_channel,
                               self.inputdim, self.nclass, path=path)
         if torch.cuda.is_available():
-            self.model.cuda(DEVICE)
+            self.model.cuda(self.device)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         self.flag = 0
         return
@@ -250,8 +253,8 @@ class NasTrainer(CNNTrainer):
                 # tune model params
                 for imgs, label in self.train_loader:
                     if torch.cuda.is_available():
-                        imgs = imgs.cuda(DEVICE)
-                        label = label.cuda(DEVICE)
+                        imgs = imgs.cuda(self.device)
+                        label = label.cuda(self.device)
                     preds = self.model(imgs)
                     loss = F.cross_entropy(preds, label)
                     self.model_optimizer.zero_grad()
