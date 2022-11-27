@@ -394,3 +394,26 @@ Epoch~187->train_loss:0.0042, val_loss:1.0248, val_accu:0.7739, time:43.485
 Epoch~188->time:43.2641
 Epoch~189->time:40.1281
 Epoch~190->time:42.6696
+Epoch~191->train_loss:0.0041, val_loss:1.0163, val_accu:0.7741, time:42.984
+Epoch~192->time:42.9312
+Epoch~193->time:42.8665
+Epoch~194->time:42.9782
+Epoch~195->time:43.0368
+Epoch~196->train_loss:0.0039, val_loss:1.0096, val_accu:0.7743, time:42.8711
+Epoch~197->time:42.8338
+Epoch~198->time:42.944
+Epoch~199->time:43.1691
+Epoch~200->time:43.1749
+softstep_shallow_cifar100/200_o1_cifar-100-python
+Files already downloaded and verified
+Files already downloaded and verified
+Epoch~1->train_loss:4.0274, val_loss:3.5922, val_accu:0.1281, time:43.402
+Epoch~2->train_loss:3.4057, val_loss:3.237, val_accu:0.2098, time:42.9746
+Epoch~3->train_loss:2.9746, val_loss:2.7441, val_accu:0.3141, time:42.8884
+Epoch~4->train_loss:2.579, val_loss:2.3922, val_accu:0.3789, time:43.0382
+Epoch~5->train_loss:2.2595, val_loss:2.0099, val_accu:0.4586, time:43.1448
+Epoch~6->train_loss:2.0307, val_loss:2.0149, val_accu:0.4645, time:43.1845
+Epoch~7->train_loss:1.8577, val_loss:1.9504, val_accu:0.4747, time:43.0987
+Epoch~8->train_loss:1.7394, val_loss:1.7841, val_accu:0.511, time:42.9882
+Epoch~9->train_loss:1.6394, val_loss:1.6773, val_accu:0.5423, time:48.1894
+Epoch~10->train_loss:1.5633, val_loss:1.6353, val_accu:0.5535, time:49.0528
