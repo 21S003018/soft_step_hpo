@@ -111,6 +111,7 @@ class EvalTrainer(CNNTrainer):
     """
 
     def __init__(self, dataset, path: str = None,device="cuda:0") -> None:
+        self.device=device
         # data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
