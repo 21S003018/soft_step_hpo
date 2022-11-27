@@ -198,3 +198,6 @@ Epoch~194->time:71.952
 Epoch~195->time:72.6431
 Epoch~196->time:71.7229
 Epoch~197->train_loss:0.0045, val_loss:0.8465, val_accu:0.7954, time:73.2731
+Epoch~198->time:62.4233
+Epoch~199->time:74.6756
+Epoch~200->time:76.8928
