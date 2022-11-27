@@ -1,1 +1,57 @@
-{"type": "bottleneck", "layer": {"conv_in": 63, "conv_out": 1024}, "block": [{"type": "normal", "c1": 52, "c2": 62, "s": 1}, {"type": "skip", "c1": 50, "c2": 62, "s": 1}, {"type": "reduction", "c1": 123, "c2": 126, "s": 2}, {"type": "skip", "c1": 116, "c2": 126, "s": 1}, {"type": "reduction", "c1": 249, "c2": 252, "s": 2}, {"type": "skip", "c1": 245, "c2": 252, "s": 1}, {"type": "reduction", "c1": 499, "c2": 502, "s": 2}, {"type": "skip", "c1": 490, "c2": 502, "s": 1}]}
+{
+    "type": "shallow",
+    "layer": {
+        "conv_in": 63,
+        "conv_out": 1024
+    },
+    "block": [
+        {
+            "type": "normal",
+            "c1": 52,
+            "c2": 62,
+            "s": 1
+        },
+        {
+            "type": "skip",
+            "c1": 50,
+            "c2": 62,
+            "s": 1
+        },
+        {
+            "type": "reduction",
+            "c1": 123,
+            "c2": 126,
+            "s": 2
+        },
+        {
+            "type": "skip",
+            "c1": 116,
+            "c2": 126,
+            "s": 1
+        },
+        {
+            "type": "reduction",
+            "c1": 249,
+            "c2": 252,
+            "s": 2
+        },
+        {
+            "type": "skip",
+            "c1": 245,
+            "c2": 252,
+            "s": 1
+        },
+        {
+            "type": "reduction",
+            "c1": 499,
+            "c2": 502,
+            "s": 2
+        },
+        {
+            "type": "skip",
+            "c1": 490,
+            "c2": 502,
+            "s": 1
+        }
+    ]
+}

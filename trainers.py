@@ -302,10 +302,10 @@ if __name__ == "__main__":
     # with open("test.json", "w") as f:
     #     json.dump(config, f)
 
-    model = ShallowEval(
-        3, 32, 100, path='config/search_space_shallow_eval.json')
     # model = ShallowEval(
-    #     3, 32, 100, path='log/softstep/171_o1_cifar-100-python.json')
+    #     3, 32, 100, path='config/search_space_shallow_eval.json')
+    model = ShallowEval(
+        3, 32, 100, path='log/softstep_shallow_cifar100/192_o1_cifar-100-python.json')
     # model = BottleneckEval(
     #     3, 32, 100, path='log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json')
     # model = BottleneckEval(
