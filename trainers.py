@@ -304,8 +304,10 @@ if __name__ == "__main__":
 
     # model = ShallowEval(
     #     3, 32, 100, path='config/search_space_shallow_eval.json')
-    model = BottleneckEval(
-        3, 32, 100, path='log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json')
+    model = ShallowEval(
+        3, 32, 100, path='log/softstep/171_o1_cifar-100-python.json')
+    # model = BottleneckEval(
+    #     3, 32, 100, path='log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json')
     # model = BottleneckEval(
     #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
