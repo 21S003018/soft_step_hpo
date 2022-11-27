@@ -29,3 +29,61 @@ Epoch~26->train_loss:0.3875, val_loss:0.4587, val_accu:0.8433, time:44.1119
 Epoch~27->train_loss:0.3752, val_loss:0.4589, val_accu:0.8476, time:43.636
 Epoch~28->time:43.5866
 Epoch~29->time:43.271
+Epoch~30->time:43.2328
+Epoch~31->time:43.0567
+Epoch~32->train_loss:0.317, val_loss:0.4457, val_accu:0.8503, time:43.5318
+Epoch~33->train_loss:0.3099, val_loss:0.4479, val_accu:0.8526, time:43.1718
+Epoch~34->train_loss:0.3011, val_loss:0.4174, val_accu:0.8605, time:43.2112
+Epoch~35->time:43.8747
+Epoch~36->train_loss:0.2828, val_loss:0.432, val_accu:0.8628, time:43.298
+Epoch~37->time:43.8503
+Epoch~38->time:43.4477
+Epoch~39->time:43.0919
+Epoch~40->time:43.0497
+Epoch~41->train_loss:0.2477, val_loss:0.4407, val_accu:0.8629, time:43.1702
+Epoch~42->train_loss:0.2427, val_loss:0.3938, val_accu:0.8718, time:43.1681
+Epoch~43->train_loss:0.2377, val_loss:0.3815, val_accu:0.8753, time:43.0809
+Epoch~44->time:43.0791
+Epoch~45->train_loss:0.2267, val_loss:0.3664, val_accu:0.8801, time:43.7441
+Epoch~46->time:43.4019
+Epoch~47->time:43.2591
+Epoch~48->time:43.5393
+Epoch~49->train_loss:0.204, val_loss:0.3666, val_accu:0.8859, time:44.1429
+Epoch~50->time:43.5683
+Epoch~51->time:43.1691
+Epoch~52->time:44.1468
+Epoch~53->time:43.0442
+Epoch~54->time:43.4362
+Epoch~55->time:43.0565
+Epoch~56->time:43.4729
+Epoch~57->train_loss:0.1781, val_loss:0.3788, val_accu:0.8881, time:43.4023
+Epoch~58->train_loss:0.1697, val_loss:0.373, val_accu:0.8889, time:43.1422
+Epoch~59->time:43.3688
+Epoch~60->time:43.3158
+Epoch~61->time:43.4145
+Epoch~62->time:43.3726
+Epoch~63->time:43.1121
+Epoch~64->train_loss:0.1536, val_loss:0.3404, val_accu:0.8988, time:43.2934
+Epoch~65->time:43.4067
+Epoch~66->time:43.1054
+Epoch~67->time:43.2768
+Epoch~68->time:43.2642
+Epoch~69->train_loss:0.1374, val_loss:0.3356, val_accu:0.8992, time:43.1439
+Epoch~70->time:43.2451
+Epoch~71->time:43.3213
+Epoch~72->time:43.3957
+Epoch~73->time:43.3156
+Epoch~74->time:43.303
+Epoch~75->time:43.3908
+Epoch~76->time:43.2653
+Epoch~77->time:42.9072
+Epoch~78->time:42.9494
+Epoch~79->time:43.0228
+Epoch~80->time:42.853
+Epoch~81->train_loss:0.1123, val_loss:0.3395, val_accu:0.9009, time:42.8229
+Epoch~82->time:42.7666
+Epoch~83->time:42.8598
+Epoch~84->time:42.8232
+Epoch~85->time:42.7886
+Epoch~86->train_loss:0.1012, val_loss:0.3423, val_accu:0.9046, time:42.7848
+Epoch~87->time:43.236
