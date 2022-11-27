@@ -66,7 +66,7 @@ class Data():
                                   num_workers=4,
                                   )
         test_loader = DataLoader(dataset=test_dataset,
-                                 batch_size=BATCHSIZE, shuffle=True,
+                                 batch_size=32, shuffle=True,
                                  )
         return train_loader, test_loader, 3, 32, 100
 
