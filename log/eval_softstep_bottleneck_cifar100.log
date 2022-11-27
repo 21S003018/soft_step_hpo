@@ -351,3 +351,5 @@ Epoch~144->train_loss:0.0768, val_loss:1.1639, val_accu:0.7405, time:99.0219
 Epoch~145->time:97.2086
 Epoch~146->time:98.5365
 Epoch~147->train_loss:0.0514, val_loss:1.1332, val_accu:0.7513, time:100.3029
+Epoch~148->time:102.7415
+Epoch~149->time:104.2267
