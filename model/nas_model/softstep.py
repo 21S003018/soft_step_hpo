@@ -524,12 +524,12 @@ class Shallow(nn.Module):  # normal block or reduction block
         if arch_opt:
             out = F.relu6(self.bn1(self.conv1(x)))
             out = torch.mul(out, self.conv1.channel_indicators)
-            out = F.relu6(self.bn2(self.conv2(out, arch_opt))+self.shortcut(x))
+            out = F.relu6(self.bn2(self.conv2(out))+self.shortcut(x))
             out = torch.mul(out, self.conv2.channel_indicators)
         else:
             out = F.relu6(self.bn1(self.conv1(x)))
             out = torch.mul(out, self.conv1.channel_indicators.data)
-            out = F.relu6(self.bn2(self.conv2(out, arch_opt))+self.shortcut(x))
+            out = F.relu6(self.bn2(self.conv2(out))+self.shortcut(x))
             out = torch.mul(out, self.conv2.channel_indicators.data)
         return out
 
@@ -562,11 +562,11 @@ class SkipShallow(nn.Module):  # skip block
         if arch_opt:
             out = F.relu6(self.bn1(self.conv1(x)))
             out = torch.mul(out, self.conv1.channel_indicators)
-            out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
+            out = F.relu6(self.bn2(self.conv2(out)))
         else:
             out = F.relu6(self.bn1(self.conv1(x)))
             out = torch.mul(out, self.conv1.channel_indicators.data)
-            out = F.relu6(self.bn2(self.conv2(out, arch_opt)))
+            out = F.relu6(self.bn2(self.conv2(out)))
         return out
 
     def update_indicators(self):

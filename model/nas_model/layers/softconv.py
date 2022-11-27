@@ -54,7 +54,7 @@ class SoftConv2d(nn.Module):
     def sample_channel_indicator(self):
         indexes = torch.FloatTensor(range(1, self.out_channels+1))
         if torch.cuda.is_available():
-            indexes = indexes.cuda(DEVICE)
+            indexes = indexes.cuda(self.weight.device)
         return torch.sigmoid(self.channel_alpha_expansion*self.out_channels*(self.channel_alpha+self.channel_controller_approx_delta()-indexes/self.out_channels))
 
     def channel_controller_approx_delta(self):
@@ -71,7 +71,7 @@ class SoftConv2d(nn.Module):
     def sample_kernel_indicator(self):
         indexes = torch.FloatTensor(range(1, int(self.kernel_size/2)+1))
         if torch.cuda.is_available():
-            indexes = indexes.cuda(DEVICE)
+            indexes = indexes.cuda(self.weight.device)
         return torch.sigmoid(self.kernel_alpha_expansion*int(self.kernel_size/2)*(self.kernel_alpha+self.kernel_controller_approx_delta()-indexes/int(self.kernel_size/2)))
 
     def kernel_controller_approx_delta(self):
@@ -84,7 +84,7 @@ class SoftConv2d(nn.Module):
         indicators = self.sample_kernel_indicator()
         self.mask = torch.ones((self.kernel_size, self.kernel_size))
         if torch.cuda.is_available():
-            self.mask = self.mask.cuda(DEVICE)
+            self.mask = self.mask.cuda(self.weight.device)
         for index, _ in enumerate(indicators):
             self.mask[index:self.kernel_size-index, index:self.kernel_size -
                       index] = indicators[int(self.kernel_size/2)-index-1]
@@ -139,7 +139,7 @@ class SoftChannelConv2d(nn.Module):
     def sample_indicator(self):
         indexes = torch.FloatTensor(range(1, self.out_channels+1))
         if torch.cuda.is_available():
-            indexes = indexes.cuda(DEVICE)
+            indexes = indexes.cuda(self.weight.device)
         return torch.sigmoid(self.expansion*self.out_channels*(self.channel_alpha+self.controller_approx_delta()-indexes/self.out_channels))
 
     def controller_approx_delta(self):
@@ -200,7 +200,7 @@ class SoftKernelConv2d(nn.Module):
     def sample_indicator(self):
         indexes = torch.FloatTensor(range(1, int(self.kernel_size/2)+1))
         if torch.cuda.is_available():
-            indexes = indexes.cuda(DEVICE)
+            indexes = indexes.cuda(self.weight.device)
         return torch.sigmoid(self.expansion*int(self.kernel_size/2)*(self.kernel_alpha+self.controller_approx_delta()-indexes/int(self.kernel_size/2)))
 
     def controller_approx_delta(self):
@@ -213,7 +213,7 @@ class SoftKernelConv2d(nn.Module):
         indicators = self.sample_indicator()
         self.mask = torch.ones((self.kernel_size, self.kernel_size))
         if torch.cuda.is_available():
-            self.mask = self.mask.cuda(DEVICE)
+            self.mask = self.mask.cuda(self.weight.device)
         for index, _ in enumerate(indicators):
             self.mask[index:self.kernel_size-index, index:self.kernel_size -
                       index] = indicators[int(self.kernel_size/2)-index-1]

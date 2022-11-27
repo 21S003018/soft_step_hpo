@@ -1,22 +1,13 @@
 from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer
 from const import *
-import torch
+import torch,argparse
 
+# parser = argparse.ArgumentParser()
 
-def softstep_eval(order=1, dataset=CIFAR10):
-    config_path = "log/softstep_linear_1e-6/{}_o{}_{}.json"
-    if order == 1:
-        # linear,o1,cifar10, according to w train loss
-        indexs = [129, 235, 305, 229]
-        # indexs = [316, 324, 330, 332, 386, 392]  # linear,o1,cifar10, according to accu
-    elif order == 2:
-        indexs = [396, 394, 330, 376, 339]  # linear,o2,cifar10
-    for index in indexs:
-        path = config_path.format(index, order, dataset)
-        print("current evaluate: ", path)
-        trainer = EvalTrainer(dataset, path)
-        trainer.train()
-    return
+# parser.add_argument('--cuda', type=str, default='0',help='')
+
+# device = f"cuda:{parser.cuda}"
+
 
 
 if __name__ == "__main__":
@@ -51,7 +42,7 @@ if __name__ == "__main__":
     # trainer.train()
     # print("softstep_bottleneck_cifar100/192_o1_cifar-100-python")
     # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json")
+    #     CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json",device)
     # trainer.train()
 
     '''mobilenetv2 evaluation'''
@@ -62,7 +53,7 @@ if __name__ == "__main__":
     '''resnet evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10)
     # trainer.train()
-    # trainer = CNNTrainer(RESNET, CIFAR100)
+    # trainer = CNNTrainer(RESNET, CIFAR100, device="cuda:2")
     # trainer.train()
     '''linear searchspace evaluation'''
     # trainer = EvalTrainer(CIFAR10, "config/search_space_eval.json")
@@ -91,7 +82,7 @@ if __name__ == "__main__":
     #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
     # trainer.train()
     trainer = SoftStepTrainer(
-        SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1)
+        SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1, device="cuda:3")
     trainer.train()
     '''softstep(bottleneck,o1,cifar10) evaluation'''
     # softstep_eval(1, CIFAR10)
@@ -103,6 +94,6 @@ if __name__ == "__main__":
     #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
     # trainer.train()
     # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR100, path=SHALLOWSEARCHSPACE, opt_order=1)
+    #     SOFTSTEP, CIFAR100, path=SHALLOWSEARCHSPACE, opt_order=1,device="cuda:1")
     # trainer.train()
     pass
