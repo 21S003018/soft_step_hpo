@@ -51,8 +51,8 @@ if __name__ == "__main__":
     # trainer = CNNTrainer(MOBILENET, CIFAR100)
     # trainer.train()
     '''resnet evaluation'''
-    trainer = CNNTrainer(RESNET, CIFAR10, device="cuda:3")
-    trainer.train()
+    # trainer = CNNTrainer(RESNET, CIFAR10, device="cuda:3")
+    # trainer.train()
     # trainer = CNNTrainer(RESNET, CIFAR100, device="cuda:2")
     # trainer.train()
     '''linear searchspace evaluation'''

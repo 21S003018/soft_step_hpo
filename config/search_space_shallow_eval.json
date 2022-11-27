@@ -1,5 +1,5 @@
 {
-    "type": "bottleneck",
+    "type": "shallow",
     "layer": {
         "conv_in": 64,
         "conv_out": 1024
