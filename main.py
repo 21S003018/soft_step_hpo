@@ -45,10 +45,10 @@ if __name__ == "__main__":
     #     CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json",device)
     # trainer.train()
 
-    for idx in range(196,200):
-        print("softstep_bottleneck_cifar10/{}_o1_cifar-10-batches-py".format(idx))
+    for idx in range(181,201):
+        print("softstep_shallow_cifar10/{}_o1_cifar-10-batches-py".format(idx))
         trainer = EvalTrainer(
-            CIFAR10, "log/softstep_bottleneck_cifar10/{}_o1_cifar-10-batches-py.json".format(idx), device="cuda:2")
+            CIFAR10, "log/softstep_shallow_cifar10/{}_o1_cifar-10-batches-py.json".format(idx), device="cuda:0")
         trainer.train()
 
     '''mobilenetv2 evaluation'''
