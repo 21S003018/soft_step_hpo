@@ -84,9 +84,9 @@ if __name__ == "__main__":
 
     '''bottleneck searchspace evaluation'''
     '''softstep search bottleneck searchspace'''
-    trainer = SoftStepTrainer(
-        SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
-    trainer.train()
+    # trainer = SoftStepTrainer(
+    #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
+    # trainer.train()
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1, device="cuda:3")
     # trainer.train()
@@ -96,9 +96,9 @@ if __name__ == "__main__":
     # softstep_eval(2, CIFAR10)
 
     '''softstep search shallow searchspace'''
-    # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR10, path=SHALLOWSEARCHSPACE, opt_order=1)
-    # trainer.train()
+    trainer = SoftStepTrainer(
+        SOFTSTEP, CIFAR10, path=SHALLOWSEARCHSPACE, opt_order=1)
+    trainer.train()
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR100, path=SHALLOWSEARCHSPACE, opt_order=1,device="cuda:1")
     # trainer.train()
