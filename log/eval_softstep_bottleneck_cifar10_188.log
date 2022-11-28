@@ -247,3 +247,23 @@ Epoch~40->time:34.8835
 Epoch~41->time:34.8311
 Epoch~42->time:34.9215
 Epoch~43->time:34.9862
+Epoch~44->time:34.8423
+Epoch~45->train_loss:0.1099, val_loss:0.2949, val_accu:0.9108, time:34.7802
+Epoch~46->train_loss:0.1132, val_loss:0.2988, val_accu:0.913, time:34.8397
+Epoch~47->time:34.9664
+Epoch~48->time:34.7783
+Epoch~49->time:34.9005
+Epoch~50->time:34.9511
+Epoch~51->time:34.8153
+Epoch~52->time:34.7632
+Epoch~53->time:34.9615
+Epoch~54->time:35.2845
+Epoch~55->time:34.9432
+Epoch~56->time:34.6941
+Epoch~57->time:34.813
+Epoch~58->time:34.7953
+Epoch~59->time:34.7231
+Epoch~60->time:34.6239
+Epoch~61->time:35.0679
+Epoch~62->time:35.0957
+Epoch~63->time:35.3637

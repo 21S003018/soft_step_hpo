@@ -136,3 +136,13 @@ Epoch~132->time:67.7802
 Epoch~133->train_loss:0.0115, val_loss:0.3217, val_accu:0.9347, time:68.0024
 Epoch~134->time:68.032
 Epoch~135->time:68.0684
+Epoch~136->time:67.9544
+Epoch~137->time:67.9349
+Epoch~138->train_loss:0.0067, val_loss:0.3116, val_accu:0.9375, time:68.0617
+Epoch~139->time:68.0464
+Epoch~140->time:67.9975
+Epoch~141->time:67.9643
+Epoch~142->time:67.8336
+Epoch~143->time:68.0438
+Epoch~144->time:68.3153
+Epoch~145->time:67.8136

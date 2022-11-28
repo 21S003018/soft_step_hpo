@@ -1,0 +1,8 @@
+softstep_shallow_cifar10/181_o1_cifar-10-batches-py
+Files already downloaded and verified
+Files already downloaded and verified
+Epoch~1->train_loss:1.62, val_loss:1.2739, val_accu:0.5413, time:21.4532
+Epoch~2->train_loss:1.0534, val_loss:1.3152, val_accu:0.5836, time:18.2244
+Epoch~3->train_loss:0.8066, val_loss:0.856, val_accu:0.7081, time:17.9862
+Epoch~4->train_loss:0.6665, val_loss:0.725, val_accu:0.749, time:18.3385
+Epoch~5->train_loss:0.5684, val_loss:0.5699, val_accu:0.801, time:18.0995

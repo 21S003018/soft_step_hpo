@@ -114,3 +114,13 @@ Epoch~110->time:67.7408
 Epoch~111->time:67.8983
 Epoch~112->train_loss:0.032, val_loss:0.2995, val_accu:0.9269, time:68.5537
 Epoch~113->time:68.1963
+Epoch~114->time:67.9205
+Epoch~115->train_loss:0.0279, val_loss:0.2914, val_accu:0.9339, time:67.8875
+Epoch~116->time:67.5124
+Epoch~117->time:67.6174
+Epoch~118->time:67.7652
+Epoch~119->time:67.4414
+Epoch~120->time:67.127
+Epoch~121->time:66.9953
+Epoch~122->time:67.2661
+Epoch~123->time:67.0088
