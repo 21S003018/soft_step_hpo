@@ -45,7 +45,7 @@ if __name__ == "__main__":
     #     CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json",device)
     # trainer.train()
 
-    for idx in range(184,188):
+    for idx in range(180,184):
         print("softstep_bottleneck_cifar10/{}_o1_cifar-10-batches-py".format(idx))
         trainer = EvalTrainer(
             CIFAR10, "log/softstep_bottleneck_cifar10/{}_o1_cifar-10-batches-py.json".format(idx), device="cuda:1")
