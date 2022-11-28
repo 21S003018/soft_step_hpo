@@ -1,0 +1,57 @@
+softstep_bottleneck_cifar10/180_o1_cifar-10-batches-py
+Files already downloaded and verified
+Files already downloaded and verified
+Epoch~1->train_loss:1.6773, val_loss:1.3178, val_accu:0.5271, time:37.7148
+Epoch~2->train_loss:1.0258, val_loss:0.8507, val_accu:0.696, time:34.7241
+Epoch~3->train_loss:0.7505, val_loss:0.6768, val_accu:0.7653, time:34.9027
+Epoch~4->time:35.0566
+Epoch~5->train_loss:0.513, val_loss:0.5327, val_accu:0.8178, time:35.1801
+Epoch~6->train_loss:0.4531, val_loss:0.5308, val_accu:0.8196, time:35.1343
+Epoch~7->train_loss:0.4096, val_loss:0.5211, val_accu:0.8224, time:35.0403
+Epoch~8->train_loss:0.3709, val_loss:0.4142, val_accu:0.8634, time:35.0222
+Epoch~9->time:35.1108
+Epoch~10->time:35.087
+Epoch~11->train_loss:0.2971, val_loss:0.3955, val_accu:0.8675, time:35.0811
+Epoch~12->time:35.0781
+Epoch~13->train_loss:0.2693, val_loss:0.3819, val_accu:0.8767, time:35.1447
+Epoch~14->time:35.0806
+Epoch~15->time:35.1779
+Epoch~16->train_loss:0.2296, val_loss:0.3475, val_accu:0.8873, time:35.1182
+Epoch~17->time:35.1001
+Epoch~18->time:35.072
+Epoch~19->time:35.1214
+Epoch~20->train_loss:0.2007, val_loss:0.3289, val_accu:0.8945, time:35.1232
+Epoch~21->time:35.035
+Epoch~22->time:35.0997
+Epoch~23->time:35.2233
+Epoch~24->train_loss:0.1733, val_loss:0.3188, val_accu:0.8977, time:35.1814
+Epoch~25->time:49.3079
+Epoch~26->time:68.2802
+Epoch~27->time:68.2205
+Epoch~28->train_loss:0.1545, val_loss:0.319, val_accu:0.9, time:68.3633
+Epoch~29->time:68.2701
+Epoch~30->train_loss:0.1501, val_loss:0.3096, val_accu:0.9011, time:68.2165
+Epoch~31->time:68.2674
+Epoch~32->time:68.1324
+Epoch~33->time:68.2862
+Epoch~34->time:68.3853
+Epoch~35->time:68.3951
+Epoch~36->time:68.3127
+Epoch~37->train_loss:0.1234, val_loss:0.3057, val_accu:0.9084, time:68.0873
+Epoch~38->time:68.3861
+Epoch~39->time:68.3065
+Epoch~40->time:68.3365
+Epoch~41->time:68.1404
+Epoch~42->time:68.2636
+Epoch~43->time:68.4205
+Epoch~44->time:68.2914
+Epoch~45->time:68.1716
+Epoch~46->time:68.2526
+Epoch~47->time:68.3074
+Epoch~48->time:68.1266
+Epoch~49->time:68.2272
+Epoch~50->time:68.4021
+Epoch~51->time:68.2395
+Epoch~52->time:68.3006
+Epoch~53->time:68.2017
+Epoch~54->time:68.2436
