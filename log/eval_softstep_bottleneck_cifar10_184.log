@@ -53,3 +53,4 @@ Epoch~49->time:68.2586
 Epoch~50->train_loss:0.1079, val_loss:0.3115, val_accu:0.9116, time:68.11
 Epoch~51->time:68.1437
 Epoch~52->time:68.0036
+Epoch~53->time:68.0348

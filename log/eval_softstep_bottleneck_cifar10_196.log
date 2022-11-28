@@ -29,3 +29,4 @@ Epoch~25->train_loss:0.1744, val_loss:0.3392, val_accu:0.8968, time:67.1394
 Epoch~26->train_loss:0.17, val_loss:0.3197, val_accu:0.8985, time:66.7227
 Epoch~27->time:66.5233
 Epoch~28->time:66.7791
+Epoch~29->time:66.5505
