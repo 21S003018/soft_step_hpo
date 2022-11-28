@@ -54,3 +54,68 @@ Epoch~50->train_loss:0.1079, val_loss:0.3115, val_accu:0.9116, time:68.11
 Epoch~51->time:68.1437
 Epoch~52->time:68.0036
 Epoch~53->time:68.0348
+Epoch~54->time:68.1291
+Epoch~55->time:67.9758
+Epoch~56->time:67.9158
+Epoch~57->time:68.1481
+Epoch~58->time:68.0207
+Epoch~59->time:67.9644
+Epoch~60->time:67.9865
+Epoch~61->time:67.8618
+Epoch~62->time:68.0566
+Epoch~63->time:67.948
+Epoch~64->time:67.9174
+Epoch~65->train_loss:0.089, val_loss:0.3064, val_accu:0.9131, time:67.9513
+Epoch~66->time:67.9536
+Epoch~67->train_loss:0.0939, val_loss:0.317, val_accu:0.9143, time:67.965
+Epoch~68->time:68.2789
+Epoch~69->time:67.906
+Epoch~70->time:68.1552
+Epoch~71->time:68.0622
+Epoch~72->time:67.829
+Epoch~73->time:67.8999
+Epoch~74->time:68.1149
+Epoch~75->train_loss:0.081, val_loss:0.3164, val_accu:0.9145, time:68.0363
+Epoch~76->time:67.7887
+Epoch~77->time:67.9591
+Epoch~78->time:68.0077
+Epoch~79->time:67.9588
+Epoch~80->time:67.9783
+Epoch~81->time:68.0056
+Epoch~82->time:67.964
+Epoch~83->train_loss:0.0712, val_loss:0.3028, val_accu:0.9199, time:67.9828
+Epoch~84->time:67.932
+Epoch~85->time:67.9939
+Epoch~86->time:67.9183
+Epoch~87->time:68.0662
+Epoch~88->train_loss:0.0577, val_loss:0.3153, val_accu:0.9208, time:67.847
+Epoch~89->time:67.7935
+Epoch~90->time:67.8002
+Epoch~91->time:68.0267
+Epoch~92->time:67.7016
+Epoch~93->time:68.8381
+Epoch~94->time:67.8106
+Epoch~95->time:68.2212
+Epoch~96->time:68.4123
+Epoch~97->time:68.0427
+Epoch~98->time:68.1299
+Epoch~99->time:68.3625
+Epoch~100->time:68.3281
+Epoch~101->time:68.2033
+Epoch~102->time:67.9211
+Epoch~103->time:67.8743
+Epoch~104->time:67.9793
+Epoch~105->time:67.9384
+Epoch~106->time:67.8182
+Epoch~107->time:67.8558
+Epoch~108->train_loss:0.0369, val_loss:0.3364, val_accu:0.9221, time:67.8987
+Epoch~109->train_loss:0.0346, val_loss:0.3156, val_accu:0.9245, time:67.8145
+Epoch~110->time:67.8413
+Epoch~111->time:67.8161
+Epoch~112->time:67.9559
+Epoch~113->train_loss:0.0344, val_loss:0.316, val_accu:0.9268, time:68.0765
+Epoch~114->train_loss:0.03, val_loss:0.3132, val_accu:0.9273, time:67.8463
+Epoch~115->time:68.0006
+Epoch~116->time:68.0076
+Epoch~117->time:68.0337
+Epoch~118->time:67.9274
