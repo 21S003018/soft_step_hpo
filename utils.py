@@ -132,7 +132,7 @@ def analyse_search_time(path,):
             tot_time += float(re.findall(pattern_time, line)[0])
         except:
             pass
-    print(tot_time/100*109/3600)
+    print(tot_time/100*229/3600)
     return
 
 
