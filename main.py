@@ -45,11 +45,11 @@ if __name__ == "__main__":
     #     CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json",device)
     # trainer.train()
 
-    for idx in range(196,200):
-        print("softstep_bottleneck_cifar10/{}_o1_cifar-10-batches-py".format(idx))
-        trainer = EvalTrainer(
-            CIFAR10, "log/softstep_bottleneck_cifar10/{}_o1_cifar-10-batches-py.json".format(idx), device="cuda:2")
-        trainer.train()
+    # for idx in range(196,200):
+    #     print("softstep_bottleneck_cifar10/{}_o1_cifar-10-batches-py".format(idx))
+    #     trainer = EvalTrainer(
+    #         CIFAR10, "log/softstep_bottleneck_cifar10/{}_o1_cifar-10-batches-py.json".format(idx), device="cuda:2")
+    #     trainer.train()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10,device="cuda:0")
@@ -87,9 +87,9 @@ if __name__ == "__main__":
     # trainer = SoftStepTrainer(
     #     SOFTSTEP, CIFAR10, path=BOTTLENECKSEARCHSPACE, opt_order=1)
     # trainer.train()
-    # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1, device="cuda:3")
-    # trainer.train()
+    trainer = SoftStepTrainer(
+        SOFTSTEP, CIFAR100, path=BOTTLENECKSEARCHSPACE, opt_order=1, device="cuda:0")
+    trainer.train()
     '''softstep(bottleneck,o1,cifar10) evaluation'''
     # softstep_eval(1, CIFAR10)
     '''softstep(bottleneck,o2,cifar10) evaluation'''
@@ -100,6 +100,6 @@ if __name__ == "__main__":
     #     SOFTSTEP, CIFAR10, path=SHALLOWSEARCHSPACE, opt_order=1)
     # trainer.train()
     # trainer = SoftStepTrainer(
-    #     SOFTSTEP, CIFAR100, path=SHALLOWSEARCHSPACE, opt_order=1,device="cuda:1")
+    #     SOFTSTEP, CIFAR100, path=SHALLOWSEARCHSPACE, opt_order=1,device="cuda:0")
     # trainer.train()
     pass

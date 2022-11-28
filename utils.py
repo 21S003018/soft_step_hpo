@@ -132,12 +132,12 @@ def analyse_search_time(path,):
             tot_time += float(re.findall(pattern_time, line)[0])
         except:
             pass
-    print(tot_time/3600)
+    print(tot_time/100*109/3600)
     return
 
 
 if __name__ == "__main__":
     # analyse_trainloss("log/softstep_linear_o2_cifar10.log", order=2)
     # analyse_trainloss("log/softstep_linear_o1_cifar100_3reduction.log")
-    analyse_search_time("log/softstep_linear_o1_cifar100_1e-4.log")
+    analyse_search_time("log/softstep_shallow_cifar100.log")
     pass
