@@ -215,3 +215,35 @@ Epoch~8->time:34.7349
 Epoch~9->train_loss:0.3389, val_loss:0.4198, val_accu:0.8613, time:34.6716
 Epoch~10->time:34.7594
 Epoch~11->time:34.5947
+Epoch~12->time:34.6605
+Epoch~13->train_loss:0.262, val_loss:0.3682, val_accu:0.8812, time:34.6059
+Epoch~14->train_loss:0.2493, val_loss:0.3608, val_accu:0.8851, time:34.8272
+Epoch~15->train_loss:0.2393, val_loss:0.3408, val_accu:0.8874, time:34.9482
+Epoch~16->time:34.9639
+Epoch~17->time:34.6574
+Epoch~18->time:34.7152
+Epoch~19->time:34.6363
+Epoch~20->time:34.6421
+Epoch~21->train_loss:0.1918, val_loss:0.3492, val_accu:0.8891, time:34.5572
+Epoch~22->train_loss:0.1839, val_loss:0.3324, val_accu:0.8961, time:34.7164
+Epoch~23->train_loss:0.1737, val_loss:0.2933, val_accu:0.9043, time:34.6511
+Epoch~24->time:35.0056
+Epoch~25->time:34.8725
+Epoch~26->time:34.9335
+Epoch~27->time:34.7453
+Epoch~28->time:34.9292
+Epoch~29->time:34.8448
+Epoch~30->time:34.7374
+Epoch~31->train_loss:0.1453, val_loss:0.3168, val_accu:0.9048, time:34.7517
+Epoch~32->time:35.0246
+Epoch~33->time:34.6441
+Epoch~34->time:34.7811
+Epoch~35->time:34.6726
+Epoch~36->time:34.8398
+Epoch~37->time:34.7061
+Epoch~38->train_loss:0.1238, val_loss:0.2937, val_accu:0.9094, time:34.7679
+Epoch~39->time:34.8175
+Epoch~40->time:34.8835
+Epoch~41->time:34.8311
+Epoch~42->time:34.9215
+Epoch~43->time:34.9862
