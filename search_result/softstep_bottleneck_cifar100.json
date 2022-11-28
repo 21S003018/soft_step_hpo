@@ -1,7 +1,7 @@
 {
     "accu": "79.54",
-    "params": "1,321,838",
-    "FLOPs": "47.16",
+    "params": "11,532,091",
+    "FLOPs": "571.27M",
     "type": "bottleneck",
     "layer": {
         "conv_in": 61,
