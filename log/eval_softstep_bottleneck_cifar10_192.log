@@ -1,0 +1,32 @@
+softstep_bottleneck_cifar10/192_o1_cifar-10-batches-py
+Files already downloaded and verified
+Files already downloaded and verified
+Epoch~1->train_loss:1.6396, val_loss:1.3643, val_accu:0.5363, time:72.553
+Epoch~2->train_loss:1.0244, val_loss:0.8319, val_accu:0.7136, time:67.3169
+Epoch~3->train_loss:0.7654, val_loss:0.6928, val_accu:0.7617, time:67.2388
+Epoch~4->train_loss:0.6144, val_loss:0.6668, val_accu:0.7804, time:67.1691
+Epoch~5->train_loss:0.5227, val_loss:0.5714, val_accu:0.8112, time:67.2075
+Epoch~6->train_loss:0.4648, val_loss:0.5103, val_accu:0.8236, time:67.3415
+Epoch~7->time:67.228
+Epoch~8->train_loss:0.3853, val_loss:0.4084, val_accu:0.8608, time:67.2541
+Epoch~9->time:67.3541
+Epoch~10->train_loss:0.328, val_loss:0.4166, val_accu:0.8643, time:66.9473
+Epoch~11->time:67.1168
+Epoch~12->train_loss:0.2871, val_loss:0.3927, val_accu:0.868, time:67.2069
+Epoch~13->train_loss:0.2736, val_loss:0.3816, val_accu:0.8718, time:67.3256
+Epoch~14->train_loss:0.2584, val_loss:0.3684, val_accu:0.8771, time:67.3097
+Epoch~15->time:66.9376
+Epoch~16->time:67.2379
+Epoch~17->train_loss:0.2262, val_loss:0.3515, val_accu:0.885, time:67.1488
+Epoch~18->time:67.087
+Epoch~19->train_loss:0.2093, val_loss:0.3285, val_accu:0.8894, time:67.0086
+Epoch~20->time:67.1747
+Epoch~21->time:67.2393
+Epoch~22->time:67.2827
+Epoch~23->train_loss:0.1823, val_loss:0.3518, val_accu:0.8895, time:67.0649
+Epoch~24->time:67.2794
+Epoch~25->train_loss:0.177, val_loss:0.3348, val_accu:0.8926, time:67.2283
+Epoch~26->train_loss:0.1637, val_loss:0.3306, val_accu:0.8968, time:67.0779
+Epoch~27->time:67.3046
+Epoch~28->time:67.0834
+Epoch~29->time:67.2067
