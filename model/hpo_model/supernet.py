@@ -8,6 +8,7 @@ import torch.nn.init as init
 import math
 import utils
 
+
 class HPOConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1, bias=None, groups=1):
         super(HPOConv2d, self).__init__()
@@ -21,10 +22,11 @@ class HPOConv2d(nn.Module):
 
         self.weight = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
-
         self.reset_parameters()
         # init channel indicators and kernel mask
-        self.channel_indicators = torch.ones(self.out_channels).reshape((1, self.out_channels, 1, 1))
+        self.channel_indicators = torch.ones(
+            self.out_channels).reshape((1, self.out_channels, 1, 1))
+        self.kernel_indicators = torch.ones(self.kernel_size)
         self.mask = torch.ones((self.kernel_size, self.kernel_size))
         pass
 
@@ -38,23 +40,29 @@ class HPOConv2d(nn.Module):
                      padding=self.padding, groups=self.groups)
         return x
 
-    def update_channel_indicators(self, value:int)->None:
-        self.channel_indicators[:,value:,:,:] = 0
-        self.channel_indicators[:,:value,:,:] = 1
+    def update_channel_indicators(self, value: int, full=False) -> None:
+        if full:
+            value = len(self.channel_indicators[0])
+        self.channel_indicators[:, value:, :, :] = 0
+        self.channel_indicators[:, :value, :, :] = 1
         if torch.cuda.is_available():
-            self.channel_indicators = self.channel_indicators.cuda(self.weight.device)
+            self.channel_indicators = self.channel_indicators.cuda(
+                self.weight.device)
         return
 
-    def update_kernel_mask(self, value: int)->None:
-        indicators = torch.zeros(int(self.kernel_size/2))
-        indicators[:value] = 1
+    def update_kernel_mask(self, value: int, full=False) -> None:
+        if full:
+            value = len(self.kernel_indicators)
+        self.kernel_indicators = torch.zeros(int(self.kernel_size/2))
+        self.kernel_indicators[:value] = 1
         self.mask = torch.ones((self.kernel_size, self.kernel_size))
-        for index, _ in enumerate(indicators):
+        for index, _ in enumerate(self.kernel_indicators):
             self.mask[index:self.kernel_size-index, index:self.kernel_size -
-                      index] = indicators[int(self.kernel_size/2)-index-1]
+                      index] = self.kernel_indicators[int(self.kernel_size/2)-index-1]
         if torch.cuda.is_available():
             self.mask = self.mask.cuda(self.weight.device)
         return
+
 
 class HPOChannelConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=None, groups=1):
@@ -69,8 +77,10 @@ class HPOChannelConv2d(nn.Module):
 
         self.weight = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
+        self.reset_parameters()
         # init channel indicators
-        self.channel_indicators = torch.ones(self.out_channels).reshape((1, self.out_channels, 1, 1))
+        self.channel_indicators = torch.ones(
+            self.out_channels).reshape((1, self.out_channels, 1, 1))
         return
 
     def reset_parameters(self):
@@ -82,12 +92,16 @@ class HPOChannelConv2d(nn.Module):
                      padding=self.padding, groups=self.groups)
         return x
 
-    def update_channel_indicators(self, value:int)->None:
-        self.channel_indicators[:,value:,:,:] = 0
-        self.channel_indicators[:,:value,:,:] = 1
+    def update_channel_indicators(self, value: int, full: False) -> None:
+        if full:
+            value = len(self.channel_indicators[0])
+        self.channel_indicators[:, value:, :, :] = 0
+        self.channel_indicators[:, :value, :, :] = 1
         if torch.cuda.is_available():
-            self.channel_indicators = self.channel_indicators.cuda(self.weight.device)
+            self.channel_indicators = self.channel_indicators.cuda(
+                self.weight.device)
         return
+
 
 class HPOKernelConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=None, groups=1):
@@ -104,7 +118,7 @@ class HPOKernelConv2d(nn.Module):
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
         self.reset_parameters()
         # init kernel mask
-        self.kernel_indicators = None
+        self.kernel_indicators = torch.ones(self.kernel_size)
         self.mask = torch.ones((self.kernel_size, self.kernel_size))
         return
 
@@ -118,7 +132,9 @@ class HPOKernelConv2d(nn.Module):
                      padding=self.padding, groups=self.groups)
         return x
 
-    def update_kernel_mask(self, value: int)->None:
+    def update_kernel_mask(self, value: int, full=False) -> None:
+        if full:
+            value = len(self.kernel_indicators)
         self.kernel_indicators = torch.zeros(int(self.kernel_size/2))
         self.kernel_indicators[:value] = 1
         self.mask = torch.ones((self.kernel_size, self.kernel_size))
@@ -126,9 +142,11 @@ class HPOKernelConv2d(nn.Module):
             self.mask[index:self.kernel_size-index, index:self.kernel_size -
                       index] = self.kernel_indicators[int(self.kernel_size/2)-index-1]
         if torch.cuda.is_available():
-            self.kernel_indicators = self.kernel_indicators.cuda(self.weight.device)
+            self.kernel_indicators = self.kernel_indicators.cuda(
+                self.weight.device)
             self.mask = self.mask.cuda(self.weight.device)
         return
+
 
 class LinearBlock(nn.Module):  # normal block or reduction block
     def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, expansion=4):
@@ -141,11 +159,11 @@ class LinearBlock(nn.Module):  # normal block or reduction block
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
         self.conv2 = HPOKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                      stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+                                     stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = HPOChannelConv2d(hidden_planes, out_planes,
-                                       kernel_size=1, bias=False)
+                                      kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
     def forward(self, x):
@@ -156,12 +174,11 @@ class LinearBlock(nn.Module):  # normal block or reduction block
         out = torch.mul(out, self.conv3.channel_indicators)
         return out
 
-    def update_indicators(self, c1,k, c2):
-        self.conv1.update_channel_indicators(c1)
-        self.conv2.update_kernel_mask(k)
-        self.conv3.update_channel_indicators(c2)
+    def update_indicators(self, c1, k, c2, full=False):
+        self.conv1.update_channel_indicators(c1, full)
+        self.conv2.update_kernel_mask(k, full)
+        self.conv3.update_channel_indicators(c2, full)
         return
-
 
 
 class SkipLinearBlock(nn.Module):  # skip block
@@ -177,7 +194,7 @@ class SkipLinearBlock(nn.Module):  # skip block
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
         self.conv2 = HPOKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                      stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+                                     stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = nn.Conv2d(hidden_planes, out_planes,
@@ -191,9 +208,9 @@ class SkipLinearBlock(nn.Module):  # skip block
         out = self.bn3(self.conv3(out))
         return out
 
-    def update_indicators(self, c1, k):
-        self.conv1.update_channel_indicators(c1)
-        self.conv2.update_kernel_mask(k)
+    def update_indicators(self, c1, k, full=False):
+        self.conv1.update_channel_indicators(c1, full)
+        self.conv2.update_kernel_mask(k, full)
         return
 
 
@@ -210,22 +227,19 @@ class LinearStage(nn.Module):
         self.skips = nn.Sequential(*skips)
         return
 
-    def forward(self, x, arch_opt=False):
-        x = self.block(x, arch_opt)
-        if arch_opt:
-            for skip in self.skips:
-                x = F.relu6(torch.mul(skip(x, arch_opt),
-                            self.block.conv3.channel_indicators) + x)
-        else:
-            for skip in self.skips:
-                x = F.relu6(torch.mul(skip(x, arch_opt),
-                            self.block.conv3.channel_indicators.data) + x)
+    def forward(self, x):
+        x = self.block(x)
+        for skip in self.skips:
+            x = F.relu6(torch.mul(skip(x),
+                        self.block.conv3.channel_indicators) + x)
         return x
 
-    def update_indicators(self, config):
-        self.block.update_indicators(config["block"]["c1"],config["block"]["k"],config["block"]["c2"])
+    def update_indicators(self, config, full=False):
+        self.block.update_indicators(
+            config["block"]["c1"], config["block"]["k"], config["block"]["c2"], full)
         for i, skip in enumerate(self.skips):
-            skip.update_indicators(config["skip"][i]["c1"],config["skip"][i]["k"])
+            skip.update_indicators(
+                config["skip"][i]["c1"], config["skip"][i]["k"], full)
         return
 
 
@@ -267,7 +281,6 @@ class LinearSupernet(nn.Module):
         return
 
     def forward(self, x):
-        self.update_indicators()
         x = F.relu6(self.bn_in(self.conv_in(x)))
         x = torch.mul(x, self.conv_in.channel_indicators)
         x = self.block_in(x)
@@ -314,15 +327,18 @@ class LinearSupernet(nn.Module):
                 })
         return config
 
-    def update_indicators(self, config:dict):
+    def update_indicators(self, config: dict, full=False):
         # layer
-        self.conv_in.update_channel_indicators(config["conv_in"])
-        self.conv_out.update_channel_indicators(config["conv_out"])
+        self.conv_in.update_channel_indicators(
+            config["layer"]["conv_in"], full)
+        self.conv_out.update_channel_indicators(
+            config["layer"]["conv_out"], full)
         # block
-        self.block_in.update_indicators(config["block"]["c1"], config["block"]["k"], config["block"]["c2"])
+        self.block_in.update_indicators(
+            config["block"]["c1"], config["block"]["k"], config["block"]["c2"], full)
         # stage
-        for i,stage in enumerate(self.stages):
-            stage.update_indicators(config["stage"][i])
+        for i, stage in enumerate(self.stages):
+            stage.update_indicators(config["stage"][i], full)
         return
 
 
@@ -528,4 +544,3 @@ class ShallowSupernet(nn.Module):
             stage.protect_controller()
         self.conv_out.protect_controller()
         return
-

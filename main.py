@@ -1,6 +1,7 @@
-from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer
+from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer, HPOTrainer
 from const import *
-import torch, argparse
+import torch
+import argparse
 
 # parser = argparse.ArgumentParser()
 
@@ -9,48 +10,12 @@ import torch, argparse
 # device = f"cuda:{parser.cuda}"
 
 
-
 if __name__ == "__main__":
     '''case evaluation'''
-    # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_linear_1e-5/194_o1_cifar-100-python.json")
-    # trainer.train()
-    # print("softstep_linear_1e-4/192_o1_cifar-100-python")
-    # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_linear_1e-4/192_o1_cifar-100-python.json")
-    # trainer.train()
-    # print("softstep_linear_1e-4/200_o1_cifar-100-python")
-    # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_linear_1e-4/200_o1_cifar-100-python.json")
-    # trainer.train()
-    # print("softstep_linear_1e-5_fixkernel/191_o1_cifar-100-python")
-    # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_linear_1e-5_fixkernel/191_o1_cifar-100-python.json")
-    # trainer.train()
-    # print("softstep_linear_1e-5_fixkernel/200_o1_cifar-100-python")
-    # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_linear_1e-5_fixkernel/200_o1_cifar-100-python.json")
-    # trainer.train()
-    # print("softstep_linear_o1_cifar10_1e-4/198_o1_cifar-10-batches-py")
-    # trainer = EvalTrainer(
-    #     CIFAR10, "log/softstep_linear_o1_cifar10_1e-4/198_o1_cifar-10-batches-py.json")
-    # trainer.train()
-
-    # print("softstep_bottleneck_cifar100/200_o1_cifar-100-python")
-    # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_bottleneck_cifar100/200_o1_cifar-100-python.json")
-    # trainer.train()
-    # print("softstep_bottleneck_cifar100/192_o1_cifar-100-python")
-    # trainer = EvalTrainer(
-    #     CIFAR100, "log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json",device)
-    # trainer.train()
-
-    for idx in range(181,201):
-        print("softstep_shallow_cifar10/{}_o1_cifar-10-batches-py".format(idx))
-        trainer = EvalTrainer(
-            CIFAR10, "log/softstep_shallow_cifar10/{}_o1_cifar-10-batches-py.json".format(idx), device="cuda:0")
-        trainer.train()
-
+    trainer = HPOTrainer(policy_name="rand", dataset=CIFAR10,
+                         search_space=LINEARSEARCHSPACE, device='cuda:0')
+    # trainer.pre_train()
+    trainer.train()
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10,device="cuda:0")
     # trainer.train()

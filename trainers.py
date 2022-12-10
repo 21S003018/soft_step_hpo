@@ -112,8 +112,8 @@ class EvalTrainer(CNNTrainer):
     specify for a dataset and a model
     """
 
-    def __init__(self, dataset, path: str = None,device="cuda:0") -> None:
-        self.device=device
+    def __init__(self, dataset, path: str = None, device="cuda:0") -> None:
+        self.device = device
         # data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
@@ -139,7 +139,7 @@ class EvalTrainer(CNNTrainer):
 
 
 class SoftStepTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None, opt_order=1,device="cuda:0") -> None:
+    def __init__(self, model_name, dataset, path=None, opt_order=1, device="cuda:0") -> None:
         # config
         self.path = path
         self.model_name = model_name
@@ -222,46 +222,48 @@ class SoftStepTrainer(CNNTrainer):
                 json.dump(current_config, f)
         return
 
+
 class HPOTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None, opt_order=1,device="cuda:0") -> None:
+    def __init__(self, policy_name, dataset, search_space=None, device="cuda:0") -> None:
         # config
-        self.path = path
-        self.model_name = model_name
+        self.path = search_space
+        self.policy_name = policy_name
         self.dataset = dataset
-        self.order = opt_order
         self.device = device
-        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
-        self.arch_lr = 0.1
         # load data
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
         # init model
-        if path == LINEARSEARCHSPACE:
+        if search_space == LINEARSEARCHSPACE:
             self.model = LinearSupernet(self.input_channel,
-                                  self.inputdim, self.nclass)
-        elif path == BOTTLENECKSEARCHSPACE:
+                                        self.inputdim, self.nclass)
+        elif search_space == BOTTLENECKSEARCHSPACE:
             self.model = BottleneckSupernet(self.input_channel,
                                             self.inputdim, self.nclass)
-        elif path == SHALLOWSEARCHSPACE:
+        elif search_space == SHALLOWSEARCHSPACE:
             self.model = ShallowSupernet(self.input_channel,
                                          self.inputdim, self.nclass)
         if torch.cuda.is_available():
             self.model.cuda(self.device)
         # pretrained model path
-        self.pretrained_model_path = "pretrained_supernet_{}".format('cifar10' if self.dataset==CIFAR10 else 'cifar100')
+        self.pretrained_model_path = "ckpt/pretrained_supernet_{}".format(
+            'cifar10' if self.dataset == CIFAR10 else 'cifar100')
         # init policy
-        self.policy = RandPolicy(path)
+        if self.policy_name == "rand":
+            self.policy = RandPolicy(search_space)
         return
 
     def train(self):
         # totally search for 200 iters and 20 rounds for observation's train
         for t in range(200):
-            self.load_model(self.path)
+            self.load_model(self.pretrained_model_path)
             st_time = time()
             config = self.policy.sample()
             self.model.update_indicators(config)
-            optimizer = torch.optim.SGD(self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 20, eta_min=0.001)
+            optimizer = torch.optim.SGD(self.model.parameters(
+            ), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, 20, eta_min=0.001)
             for _ in range(20):
                 self.model.train()
                 scheduler.step()
@@ -276,18 +278,20 @@ class HPOTrainer(CNNTrainer):
                     loss.backward()
                     train_loss += loss.item()*len(imgs)/self.num_image
                     optimizer.step()
-            self.policy.step(train_loss,self.model.generate_config())
+            self.policy.step(train_loss, self.model.generate_config())
             ed_time = time()
             val_accu, val_loss = self.val()
             print(f"Episode~{t+1}->train_loss:{round(train_loss,4)}val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
-        # # save the opt model
-        # with open("rand_linear_cifar10", "w") as f:
-        #     json.dump(self.policy.opt_model, f)
+        # save the opt model
+        with open("search_result/rand_linear_cifar10.json", "w") as f:
+            json.dump(self.policy.opt_model, f)
         return
 
-    def pre_tain(self):
+    def pre_train(self):
+        self.load_model(self.pretrained_model_path)
+        self.model.update_indicators(self.policy.sample(), True)
         optimizer = torch.optim.SGD(
-            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+            self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, EPOCHS, eta_min=0.001)
         for i in range(EPOCHS):
@@ -312,6 +316,7 @@ class HPOTrainer(CNNTrainer):
         # save model
         self.save_model(self.pretrained_model_path)
         return
+
 
 class NasTrainer(CNNTrainer):
     def __init__(self, model_name, dataset, path=None, device="cuda:0") -> None:

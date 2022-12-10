@@ -54,8 +54,8 @@ class RandPolicy():
                     "s": 1
                 })
                 config["stage"].append(stage_conf)
-            else:
-                print("Only linear space evaluated for random policy!")
+        else:
+            print("Only linear space evaluated for random policy!")
         return config
 
     def step(self, loss, config_eval)-> None:
