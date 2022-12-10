@@ -12,6 +12,8 @@ from torchstat import stat
 from model.cnn_model.resnet import ResNet
 from model.cnn_model.mobilenet import MobileNetV2
 from model.cnn_model.eval import Eval, BottleneckEval, ShallowEval, get_block_type
+from model.hpo_model.supernet import LinearSupernet, BottleneckSupernet, ShallowSupernet
+from model.hpo_model.rand import RandPolicy
 from model.nas_model.softstep import SoftStep, BottleneckSoftStep, ShallowSoftStep
 warnings.filterwarnings("ignore")
 
@@ -220,6 +222,96 @@ class SoftStepTrainer(CNNTrainer):
                 json.dump(current_config, f)
         return
 
+class HPOTrainer(CNNTrainer):
+    def __init__(self, model_name, dataset, path=None, opt_order=1,device="cuda:0") -> None:
+        # config
+        self.path = path
+        self.model_name = model_name
+        self.dataset = dataset
+        self.order = opt_order
+        self.device = device
+        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
+        self.arch_lr = 0.1
+        # load data
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
+        # init model
+        if path == LINEARSEARCHSPACE:
+            self.model = LinearSupernet(self.input_channel,
+                                  self.inputdim, self.nclass)
+        elif path == BOTTLENECKSEARCHSPACE:
+            self.model = BottleneckSupernet(self.input_channel,
+                                            self.inputdim, self.nclass)
+        elif path == SHALLOWSEARCHSPACE:
+            self.model = ShallowSupernet(self.input_channel,
+                                         self.inputdim, self.nclass)
+        if torch.cuda.is_available():
+            self.model.cuda(self.device)
+        # pretrained model path
+        self.pretrained_model_path = "pretrained_supernet_{}".format('cifar10' if self.dataset==CIFAR10 else 'cifar100')
+        # init policy
+        self.policy = RandPolicy(path)
+        return
+
+    def train(self):
+        # totally search for 200 iters and 20 rounds for observation's train
+        for t in range(200):
+            self.load_model(self.path)
+            st_time = time()
+            config = self.policy.sample()
+            self.model.update_indicators(config)
+            optimizer = torch.optim.SGD(self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 20, eta_min=0.001)
+            for _ in range(20):
+                self.model.train()
+                scheduler.step()
+                train_loss = 0
+                for imgs, label in self.train_loader:
+                    if torch.cuda.is_available():
+                        imgs = imgs.cuda(self.device)
+                        label = label.cuda(self.device)
+                    preds = self.model(imgs)
+                    loss = F.cross_entropy(preds, label)
+                    optimizer.zero_grad()
+                    loss.backward()
+                    train_loss += loss.item()*len(imgs)/self.num_image
+                    optimizer.step()
+            self.policy.step(train_loss,self.model.generate_config())
+            ed_time = time()
+            val_accu, val_loss = self.val()
+            print(f"Episode~{t+1}->train_loss:{round(train_loss,4)}val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+        # # save the opt model
+        # with open("rand_linear_cifar10", "w") as f:
+        #     json.dump(self.policy.opt_model, f)
+        return
+
+    def pre_tain(self):
+        optimizer = torch.optim.SGD(
+            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, EPOCHS, eta_min=0.001)
+        for i in range(EPOCHS):
+            self.model.train()
+            loss_sum = 0
+            scheduler.step()
+            st_time = time()
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                loss_sum += loss.item() * len(imgs)/self.num_image
+            ed_time = time()
+            epoch_note = ''
+            print(
+                f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum,4)}, time:{round(ed_time-st_time,4)}, learning rate:{round(scheduler.get_lr()[0],4)}")
+        # save model
+        self.save_model(self.pretrained_model_path)
+        return
 
 class NasTrainer(CNNTrainer):
     def __init__(self, model_name, dataset, path=None, device="cuda:0") -> None:
