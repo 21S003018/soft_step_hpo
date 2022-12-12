@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # trainer = HPOTrainer(policy_name="rand", dataset=CIFAR10,
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.rand_search()
-    # '''bayes policy'''
+    '''bayes policy'''
     # trainer = HPOTrainer(policy_name="bayes", dataset=CIFAR10,
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.bayes_search()
@@ -24,6 +24,18 @@ if __name__ == "__main__":
     trainer = HPOTrainer(policy_name="zoopt", dataset=CIFAR10,
                          search_space=LINEARSEARCHSPACE, device='cuda:0')
     trainer.zoopt_search()
+    '''bandit policy'''
+    trainer = HPOTrainer(policy_name="bandit", dataset=CIFAR10,
+                         search_space=LINEARSEARCHSPACE, device='cuda:0')
+    trainer.bandit_search()
+    '''ga policy'''
+    trainer = HPOTrainer(policy_name="ga", dataset=CIFAR10,
+                         search_space=LINEARSEARCHSPACE, device='cuda:0')
+    trainer.ea_search()
+    '''pso policy'''
+    trainer = HPOTrainer(policy_name="pso", dataset=CIFAR10,
+                         search_space=LINEARSEARCHSPACE, device='cuda:0')
+    trainer.ea_search()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10,device="cuda:0")
