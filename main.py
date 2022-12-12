@@ -12,10 +12,19 @@ import argparse
 
 if __name__ == "__main__":
     '''case evaluation'''
-    trainer = HPOTrainer(policy_name="rand", dataset=CIFAR10,
+    '''random policy'''
+    # trainer = HPOTrainer(policy_name="rand", dataset=CIFAR10,
+    #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
+    # trainer.rand_search()
+    # '''bayes policy'''
+    # trainer = HPOTrainer(policy_name="bayes", dataset=CIFAR10,
+    #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
+    # trainer.bayes_search()
+    '''zoopt policy'''
+    trainer = HPOTrainer(policy_name="zoopt", dataset=CIFAR10,
                          search_space=LINEARSEARCHSPACE, device='cuda:0')
-    # trainer.pre_train()
-    trainer.train()
+    trainer.zoopt_search()
+
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10,device="cuda:0")
     # trainer.train()

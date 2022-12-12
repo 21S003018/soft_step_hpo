@@ -14,6 +14,10 @@ from model.cnn_model.mobilenet import MobileNetV2
 from model.cnn_model.eval import Eval, BottleneckEval, ShallowEval, get_block_type
 from model.hpo_model.supernet import LinearSupernet, BottleneckSupernet, ShallowSupernet
 from model.hpo_model.rand import RandPolicy
+from model.hpo_model.bayes import BayesPolicy
+from model.hpo_model.zoopt import ZooptPolicy, Parameter, Opt
+from model.hpo_model.bandit import HyperbandPolicy
+from model.hpo_model.ea import EAPolicy
 from model.nas_model.softstep import SoftStep, BottleneckSoftStep, ShallowSoftStep
 warnings.filterwarnings("ignore")
 
@@ -251,41 +255,94 @@ class HPOTrainer(CNNTrainer):
         # init policy
         if self.policy_name == "rand":
             self.policy = RandPolicy(search_space)
+        if self.policy_name == "bayes":
+            self.policy = BayesPolicy(search_space, self.observe)
+        if self.policy_name == "zoopt":
+            self.policy = ZooptPolicy(search_space, self.observe)
+        if self.policy_name == "bandit":
+            self.policy = HyperbandPolicy(search_space, self.observe)
+        if self.policy_name == "ga":
+            self.policy = EAPolicy(search_space, self.observe,"GA")
+        if self.policy_name == "pso":
+            self.policy = EAPolicy(search_space, self.observe,"PSO")
         return
 
-    def train(self):
+    def rand_search(self):
         # totally search for 200 iters and 20 rounds for observation's train
         for t in range(200):
-            self.load_model(self.pretrained_model_path)
             st_time = time()
             config = self.policy.sample()
-            self.model.update_indicators(config)
-            optimizer = torch.optim.SGD(self.model.parameters(
-            ), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer, 20, eta_min=0.001)
-            for _ in range(20):
-                self.model.train()
-                scheduler.step()
-                train_loss = 0
-                for imgs, label in self.train_loader:
-                    if torch.cuda.is_available():
-                        imgs = imgs.cuda(self.device)
-                        label = label.cuda(self.device)
-                    preds = self.model(imgs)
-                    loss = F.cross_entropy(preds, label)
-                    optimizer.zero_grad()
-                    loss.backward()
-                    train_loss += loss.item()*len(imgs)/self.num_image
-                    optimizer.step()
+            train_loss = self.observe(config)
             self.policy.step(train_loss, self.model.generate_config())
             ed_time = time()
             val_accu, val_loss = self.val()
-            print(f"Episode~{t+1}->train_loss:{round(train_loss,4)}val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+            print(f"Episode~{t+1}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+            with open("log/rand/{}_{}.json".format(t+1, self.dataset), "w") as f:
+                json.dump(self.model.generate_config(), f)
         # save the opt model
-        with open("search_result/rand_linear_cifar10.json", "w") as f:
+        with open("search_result/{}_linear_cifar10.json".format(self.policy.tag), "w") as f:
             json.dump(self.policy.opt_model, f)
         return
+
+    def bayes_search(self):
+        st_time = time()
+        self.policy.controller.maximize(n_iter=200)
+        ed_time = time()
+        print(ed_time-st_time, self.policy.controller.max["params"],
+              self.policy.controller.max["target"], self.policy.controller.res)
+        return
+
+    def zoopt_search(self):
+        st_time = time()
+        solution = Opt.min(self.policy.obj, Parameter(budget=200,))
+        ed_time = time()
+        print(ed_time-st_time, solution.get_x())
+        return
+
+    def bandit_search(self):
+        st_time = time()
+        opt_config = self.policy.run()
+        ed_time = time()
+        print(ed_time-st_time, opt_config)
+        return
+
+    def ea_search(self):
+        st_time = time()
+        opt_config = self.policy.run()
+        ed_time = time()
+        print(ed_time-st_time, opt_config)
+        return
+
+    def observe(self, config, niter=20):
+        st_time = time()
+        self.load_model(self.pretrained_model_path)
+        self.model.update_indicators(config)
+        optimizer = torch.optim.SGD(self.model.parameters(
+        ), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, niter, eta_min=0.001)
+        for _ in range(niter):
+            self.model.train()
+            scheduler.step()
+            train_loss = 0
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                optimizer.zero_grad()
+                loss.backward()
+                train_loss += loss.item()*len(imgs)/self.num_image
+                optimizer.step()
+        ed_time = time()
+        val_accu, val_loss = self.val()
+        print(f"Episode~{self.policy.iter}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+
+        # if self.policy_name in ["bayes", "zoopt"]:
+        with open("log/bayes/{}_{}.json".format(self.policy.iter, self.dataset), "w") as f:
+            json.dump(self.model.generate_config(), f)
+        return train_loss
 
     def pre_train(self):
         self.load_model(self.pretrained_model_path)
@@ -404,8 +461,8 @@ if __name__ == "__main__":
     #     3, 32, 100, path='config/search_space_shallow_eval.json')
     # model = ShallowEval(
     #     3, 32, 100, path='log/softstep_shallow_cifar100/196_o1_cifar-100-python.json')
-    model = BottleneckEval(
-        3, 32, 100, path='search_result/softstep_bottleneck_cifar100.json')
+    # model = BottleneckEval(
+    #     3, 32, 100, path='search_result/softstep_bottleneck_cifar100.json')
     # model = BottleneckEval(
     #     3, 32, 100, path='log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json')
     # model = BottleneckEval(
@@ -415,9 +472,12 @@ if __name__ == "__main__":
     #     3, 32, 100, path='search_result/softstep_linear_cifar100.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
-    print(stat(model, (3, 32, 32)))
+    # print(stat(model, (3, 32, 32)))
     # thop.profile(model, inputs=torch.randn((1,3,32,32)))
     # torchsummary.summary(model,(3,32,32))
+    policy = RandPolicy(LINEARSEARCHSPACE)
+    with open("test.json", "w") as f:
+        json.dump(policy.sample(), f)
 
     # model = ShallowSoftStep(
     #     3, 32, 100, path='config/search_space_shallow.json')
