@@ -19,6 +19,7 @@ from model.hpo_model.zoopt import ZooptPolicy, Parameter, Opt
 from model.hpo_model.bandit import HyperbandPolicy
 from model.hpo_model.ea import EAPolicy
 from model.nas_model.softstep import SoftStep, BottleneckSoftStep, ShallowSoftStep
+from model.nas_model.darts import DARTS
 warnings.filterwarnings("ignore")
 
 
@@ -262,26 +263,27 @@ class HPOTrainer(CNNTrainer):
         if self.policy_name == "bandit":
             self.policy = HyperbandPolicy(search_space, self.observe)
         if self.policy_name == "ga":
-            self.policy = EAPolicy(search_space, self.observe,"GA")
+            self.policy = EAPolicy(search_space, self.observe, "ga")
         if self.policy_name == "pso":
-            self.policy = EAPolicy(search_space, self.observe,"PSO")
+            self.policy = EAPolicy(search_space, self.observe, "ga")
         return
 
     def rand_search(self):
         # totally search for 200 iters and 20 rounds for observation's train
         for t in range(200):
-            st_time = time()
+            # st_time = time()
+            self.policy.iter += 1
             config = self.policy.sample()
             train_loss = self.observe(config)
             self.policy.step(train_loss, self.model.generate_config())
-            ed_time = time()
-            val_accu, val_loss = self.val()
-            print(f"Episode~{t+1}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
-            with open("log/rand/{}_{}.json".format(t+1, self.dataset), "w") as f:
-                json.dump(self.model.generate_config(), f)
+            # ed_time = time()
+            # val_accu, val_loss = self.val()
+            # print(f"Episode~{t+1}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+            # with open("log/rand/{}_{}.json".format(t+1, self.dataset), "w") as f:
+            #     json.dump(self.model.generate_config(), f)
         # save the opt model
-        with open("search_result/{}_linear_cifar10.json".format(self.policy.tag), "w") as f:
-            json.dump(self.policy.opt_model, f)
+        # with open("search_result/{}_linear_cifar10.json".format(self.policy.tag), "w") as f:
+        #     json.dump(self.policy.opt_model, f)
         return
 
     def bayes_search(self):
@@ -308,9 +310,9 @@ class HPOTrainer(CNNTrainer):
 
     def ea_search(self):
         st_time = time()
-        opt_config = self.policy.run()
+        opt_config, opt_loss = self.policy.controller.run()
         ed_time = time()
-        print(ed_time-st_time, opt_config)
+        print(ed_time-st_time, opt_config, opt_loss)
         return
 
     def observe(self, config, niter=20):
@@ -340,12 +342,12 @@ class HPOTrainer(CNNTrainer):
         print(f"Episode~{self.policy.iter}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
 
         # if self.policy_name in ["bayes", "zoopt"]:
-        with open("log/bayes/{}_{}.json".format(self.policy.iter, self.dataset), "w") as f:
+        with open("log/{}/{}_{}.json".format(self.policy.tag, self.policy.iter, self.dataset), "w") as f:
             json.dump(self.model.generate_config(), f)
         return train_loss
 
     def pre_train(self):
-        self.load_model(self.pretrained_model_path)
+        # self.load_model(self.pretrained_model_path)
         self.model.update_indicators(self.policy.sample(), True)
         optimizer = torch.optim.SGD(
             self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
@@ -384,63 +386,54 @@ class NasTrainer(CNNTrainer):
         self.num_image = num_image(self.train_loader)
         # init model
         self.model_name = model_name
-        self.model = SoftStep(self.input_channel,
-                              self.inputdim, self.nclass, path=path)
+        if model_name == "darts":
+            self.model = DARTS(self.input_channel,
+                               self.inputdim, self.nclass, path=path)
         if torch.cuda.is_available():
             self.model.cuda(self.device)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         self.flag = 0
         return
 
-    def train(self):
+    def search(self):
         self.model_optimizer = torch.optim.SGD(
-            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM)
+            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         self.arch_optimizer = torch.optim.SGD(
-            self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM)
-        lr_schedular = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        schedular = torch.optim.lr_scheduler.CosineAnnealingLR(
             self.model_optimizer, EPOCHS, eta_min=0.001)
         opt_accu = -1
         for i in range(EPOCHS):
             self.model.train()
             loss_sum = 0
             st_time = time()
-            if self.flag % 2 == 0:
-                # tune model params
-                for imgs, label in self.train_loader:
-                    if torch.cuda.is_available():
-                        imgs = imgs.cuda(self.device)
-                        label = label.cuda(self.device)
-                    preds = self.model(imgs)
-                    loss = F.cross_entropy(preds, label)
-                    self.model_optimizer.zero_grad()
-                    loss.backward()
-                    self.model_optimizer.step()
-                    loss_sum += loss.item() * len(imgs)/self.num_image
-            else:
-                # tune arch params
-                for imgs, label in self.train_loader:
-                    if torch.cuda.is_available():
-                        imgs = imgs.cuda(DEVICE)
-                        label = label.cuda(DEVICE)
-                    preds = self.model(imgs)
-                    loss = F.cross_entropy(preds, label)
-                    self.arch_optimizer.zero_grad()
-                    loss.backward()
-                    self.arch_optimizer.step()
-                    loss_sum += loss.item() * len(imgs)/self.num_image
+            schedular.step()
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                self.model_optimizer.zero_grad()
+                loss.backward()
+                self.model_optimizer.step()
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                self.arch_optimizer.zero_grad()
+                loss.backward()
+                self.arch_optimizer.step()
+                loss_sum += loss.item() * len(imgs)/self.num_image
+            ed_time = time()
             # eval
             val_accu, val_loss = self.val()
             if val_accu > opt_accu:
                 self.save_model()
                 opt_accu = val_accu
                 print(
-                    f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
-                # # check arch params
-                # size_vectors = self.model.generate_size_vector()
-                # for tmp in size_vectors:
-                #     print(tmp)
-                # print()
-            lr_schedular.step()
+                    f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+            # save model
+            with open(f"log/{self.model_name}/{i+1}_{self.dataset}.json", "w") as f:
+                json.dump(self.model.generate_config(), f)
         return
 
 

@@ -10,10 +10,11 @@ class HyperbandPolicy:
         self.search_space = search_space
         with open(self.search_space, "r") as f:
             self.config = json.load(f)
-        self.tag = "hyperband"
+        self.tag = "bandit"
         self.observe = observe
+        self.iter = 0
 
-        self.max_iter = 27
+        self.max_iter = 81
         self.eta = 3
 
         self.logeta = lambda x: log(x) / log(self.eta)
@@ -30,9 +31,9 @@ class HyperbandPolicy:
             n = int(ceil(self.B / self.max_iter / (s + 1) * self.eta ** s))
             r = self.max_iter * self.eta ** (-s)
             candidates = [self.sample() for _ in range(n)]
-            for i in range(s + 1):
+            for i in range(s):
                 n_configs = n * self.eta ** (-i)
-                n_iterations = r * self.eta ** (i)
+                n_iterations = int(r * self.eta ** (i))
                 train_losses = []
                 for config in candidates:
                     self.counter += 1
@@ -42,6 +43,7 @@ class HyperbandPolicy:
                 candidates = [candidates[i] for i in indices]
                 candidates = candidates[0:int(n_configs / self.eta)]
             config = candidates[0]
+            self.iter += 1
             train_loss = self.observe(config)
             if train_loss < self.opt_loss:
                 self.opt_loss = train_loss

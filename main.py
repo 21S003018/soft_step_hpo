@@ -13,29 +13,30 @@ import argparse
 if __name__ == "__main__":
     '''case evaluation'''
     '''random policy'''
-    # trainer = HPOTrainer(policy_name="rand", dataset=CIFAR10,
+    # trainer = HPOTrainer(policy_name="rand", dataset=CIFAR100,
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.rand_search()
+    # trainer.pre_train()
     '''bayes policy'''
-    # trainer = HPOTrainer(policy_name="bayes", dataset=CIFAR10,
+    # trainer = HPOTrainer(policy_name="bayes", dataset=CIFAR100,
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.bayes_search()
     '''zoopt policy'''
-    trainer = HPOTrainer(policy_name="zoopt", dataset=CIFAR10,
+    trainer = HPOTrainer(policy_name="zoopt", dataset=CIFAR100,
                          search_space=LINEARSEARCHSPACE, device='cuda:0')
     trainer.zoopt_search()
     '''bandit policy'''
-    trainer = HPOTrainer(policy_name="bandit", dataset=CIFAR10,
-                         search_space=LINEARSEARCHSPACE, device='cuda:0')
-    trainer.bandit_search()
+    # trainer = HPOTrainer(policy_name="bandit", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
+    # trainer.bandit_search()
     '''ga policy'''
-    trainer = HPOTrainer(policy_name="ga", dataset=CIFAR10,
-                         search_space=LINEARSEARCHSPACE, device='cuda:0')
-    trainer.ea_search()
+    # trainer = HPOTrainer(policy_name="ga", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
+    # trainer.ea_search()
     '''pso policy'''
-    trainer = HPOTrainer(policy_name="pso", dataset=CIFAR10,
-                         search_space=LINEARSEARCHSPACE, device='cuda:0')
-    trainer.ea_search()
+    # trainer = HPOTrainer(policy_name="pso", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
+    # trainer.ea_search()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10,device="cuda:0")
