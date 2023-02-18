@@ -1,4 +1,4 @@
-from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer, HPOTrainer
+from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer, HPOTrainer, RLTrainer
 from const import *
 import torch
 import argparse
@@ -22,9 +22,9 @@ if __name__ == "__main__":
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.bayes_search()
     '''zoopt policy'''
-    trainer = HPOTrainer(policy_name="zoopt", dataset=CIFAR100,
-                         search_space=LINEARSEARCHSPACE, device='cuda:0')
-    trainer.zoopt_search()
+    # trainer = HPOTrainer(policy_name="zoopt", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
+    # trainer.zoopt_search()
     '''bandit policy'''
     # trainer = HPOTrainer(policy_name="bandit", dataset=CIFAR100,
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
@@ -37,6 +37,10 @@ if __name__ == "__main__":
     # trainer = HPOTrainer(policy_name="pso", dataset=CIFAR100,
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.ea_search()
+    '''mnasnet'''
+    trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR10,
+                        search_space=LINEARSEARCHSPACE, device="cuda:0")
+    trainer.mnasnet_search()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10,device="cuda:0")

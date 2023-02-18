@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch import autograd
+from torch.distributions import Categorical
 from const import *
 from utils import Data, num_image
 from time import time
@@ -20,6 +20,8 @@ from model.hpo_model.bandit import HyperbandPolicy
 from model.hpo_model.ea import EAPolicy
 from model.nas_model.softstep import SoftStep, BottleneckSoftStep, ShallowSoftStep
 from model.nas_model.darts import DARTS
+from model.nas_model.chamnet import ChamNet
+from model.nas_model.mnasnet import PolicyNetwork, ValueNetwork, Environment
 warnings.filterwarnings("ignore")
 
 
@@ -378,7 +380,7 @@ class HPOTrainer(CNNTrainer):
 
 
 class NasTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None, device="cuda:0") -> None:
+    def __init__(self, model_name, dataset, search_space=None, device="cuda:0") -> None:
         self.device = device
         # load data
         self.dataset = dataset
@@ -388,14 +390,18 @@ class NasTrainer(CNNTrainer):
         self.model_name = model_name
         if model_name == "darts":
             self.model = DARTS(self.input_channel,
-                               self.inputdim, self.nclass, path=path)
+                               self.inputdim, self.nclass, path=search_space)
+        if model_name == "chamnet" and search_space == LINEARSEARCHSPACE:
+            self.model = LinearSupernet(self.input_channel,
+                                        self.inputdim, self.nclass)
+            self.policy = ChamNet(search_space, self.observe)
         if torch.cuda.is_available():
             self.model.cuda(self.device)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         self.flag = 0
         return
 
-    def search(self):
+    def darts_search(self):
         self.model_optimizer = torch.optim.SGD(
             self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         self.arch_optimizer = torch.optim.SGD(
@@ -436,6 +442,104 @@ class NasTrainer(CNNTrainer):
                 json.dump(self.model.generate_config(), f)
         return
 
+    def chamnet_search(self):
+        # train the predictor
+        # self.policy.train_predictor()
+        # ea search
+        self.policy.train_predictor(True)
+        st_time = time()
+        opt_config, opt_loss = self.policy.controller.run()
+        ed_time = time()
+        print(ed_time-st_time, opt_config, opt_loss)
+        return
+
+    def observe(self, config, niter=200):
+        st_time = time()
+        self.model.update_indicators(config)
+        optimizer = torch.optim.SGD(self.model.parameters(
+        ), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, niter, eta_min=0.001)
+        for _ in range(niter):
+            self.model.train()
+            scheduler.step()
+            train_loss = 0
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                optimizer.zero_grad()
+                loss.backward()
+                train_loss += loss.item()*len(imgs)/self.num_image
+                optimizer.step()
+        ed_time = time()
+        val_accu, val_loss = self.val()
+        print(f"Episode~{self.policy.iter}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+        return train_loss
+
+
+class RLTrainer(NasTrainer):
+    def __init__(self, model_name, dataset, search_space=None, device="cuda:0") -> None:
+        self.device = device
+        # load data
+        self.dataset = dataset
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
+        # init model
+        self.model_name = model_name
+        if self.model_name == "mnasnet":
+            self.policy_model = PolicyNetwork()
+            self.value_model = ValueNetwork()
+            self.environment = Environment(search_space)
+        if torch.cuda.is_available():
+            self.policy_model.cuda(self.device)
+            self.value_model.cuda(self.device)
+        # self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
+        self.flag = 0
+        return
+
+    def mnasnet_search(self):
+        length_episodes = 512
+        num_processes = 8
+        curr_state = torch.Tensor(
+            [self.environment.sample_state() for _ in range(num_processes)])
+        if torch.cuda.is_available():
+            curr_state = curr_state.cuda(self.device)
+        while True:
+            states = []
+            values = []
+            rewards = []
+            actions = []
+            for _ in range(length_episodes):
+                states.extend(curr_state.clone())
+                value = self.value_model(curr_state)
+                values.extend(value)
+                logits = self.policy_model(curr_state)
+                action = []
+                for logit in logits:
+                    policy = F.softmax(logit, dim=1)
+                    action.append(Categorical(policy).sample())
+                action = torch.stack(action).T
+                actions.extend(action)
+                next_states = []
+                for i, state in enumerate(curr_state):
+                    next_state = self.environment.next_state(
+                        state, action[i]-1)
+                    next_state_config = self.environment.get_config(next_state)
+                    train_loss = self.observe(next_state_config)
+                    reward = 1 - train_loss
+                    rewards.append(reward)
+                    next_states.append(next_state)
+                curr_state = torch.Tensor(next_states)
+                if torch.cuda.is_available():
+                    curr_state = curr_state.cuda(self.device)
+
+                break
+            break
+        return
+
 
 if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
@@ -468,9 +572,10 @@ if __name__ == "__main__":
     # print(stat(model, (3, 32, 32)))
     # thop.profile(model, inputs=torch.randn((1,3,32,32)))
     # torchsummary.summary(model,(3,32,32))
-    policy = RandPolicy(LINEARSEARCHSPACE)
-    with open("test.json", "w") as f:
-        json.dump(policy.sample(), f)
+
+    # policy = RandPolicy(LINEARSEARCHSPACE)
+    # with open("test.json", "w") as f:
+    #     json.dump(policy.sample(), f)
 
     # model = ShallowSoftStep(
     #     3, 32, 100, path='config/search_space_shallow.json')
@@ -485,4 +590,17 @@ if __name__ == "__main__":
     # trainer = SoftStepTrainer(SOFTSTEP, CIFAR100, path=LINEARSEARCHSPACE)
     # for name, param in trainer.model.named_parameters():
     #     print(name)
+
+    # model = PolicyNetwork()
+    # x = torch.rand((32, 44))
+    # distris = model(x)
+    # print(distris)
+    # for distri in distris:
+    #     print(distri.size())
+    #     print(distri)
+    # print(x.size())
+    # print(x)
+    x = torch.zeros((3, 4))
+    print(x)
+    print(F.softmax(x, dim=0))
     pass
