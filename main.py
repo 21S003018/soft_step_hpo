@@ -34,13 +34,13 @@ if __name__ == "__main__":
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.ea_search()
     '''pso policy'''
-    # trainer = HPOTrainer(policy_name="pso", dataset=CIFAR100,
-    #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
-    # trainer.ea_search()
+    trainer = HPOTrainer(policy_name="pso", dataset=CIFAR100,
+                         search_space=LINEARSEARCHSPACE, device='cuda:0')
+    trainer.ea_search()
     '''mnasnet'''
-    trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR10,
-                        search_space=LINEARSEARCHSPACE, device="cuda:0")
-    trainer.mnasnet_search()
+    # trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR10,
+    #                     search_space=LINEARSEARCHSPACE, device="cuda:0")
+    # trainer.mnasnet_search()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10,device="cuda:0")

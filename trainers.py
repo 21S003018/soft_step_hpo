@@ -267,7 +267,8 @@ class HPOTrainer(CNNTrainer):
         if self.policy_name == "ga":
             self.policy = EAPolicy(search_space, self.observe, "ga")
         if self.policy_name == "pso":
-            self.policy = EAPolicy(search_space, self.observe, "ga")
+            self.policy = EAPolicy(search_space, self.observe, "pso")
+            self.policy.init_pso_controller()
         return
 
     def rand_search(self):
@@ -343,7 +344,6 @@ class HPOTrainer(CNNTrainer):
         val_accu, val_loss = self.val()
         print(f"Episode~{self.policy.iter}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
 
-        # if self.policy_name in ["bayes", "zoopt"]:
         with open("log/{}/{}_{}.json".format(self.policy.tag, self.policy.iter, self.dataset), "w") as f:
             json.dump(self.model.generate_config(), f)
         return train_loss
@@ -545,6 +545,8 @@ if __name__ == "__main__":
     # trainer = EvalTrainer(CIFAR100, path='search_result/softstep_linear_o1_cifar10.json')
     # trainer = EvalTrainer(CIFAR100, path='test.json')
     # trainer = EvalTrainer(CIFAR100, path='config/search_space_linear_eval.json')
+    # trainer = EvalTrainer(CIFAR100, path='log/bayes/17_cifar-100-python.json')
+
     # print(stat(trainer.model, (3, 32, 32)))
     # model = BottleneckEval(
     #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
@@ -565,11 +567,11 @@ if __name__ == "__main__":
     # model = BottleneckEval(
     #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
-    # model = Eval(
-    #     3, 32, 100, path='search_result/softstep_linear_cifar100.json')
+    # model = Eval(3, 32, 100, path='search_result/softstep_linear_cifar100.json')
+    model = Eval(3, 32, 100, path='log/ga/45_cifar-100-python.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
-    # print(stat(model, (3, 32, 32)))
+    print(stat(model, (3, 32, 32)))
     # thop.profile(model, inputs=torch.randn((1,3,32,32)))
     # torchsummary.summary(model,(3,32,32))
 
@@ -600,7 +602,7 @@ if __name__ == "__main__":
     #     print(distri)
     # print(x.size())
     # print(x)
-    x = torch.zeros((3, 4))
-    print(x)
-    print(F.softmax(x, dim=0))
+    # x = torch.zeros((3, 4))
+    # print(x)
+    # print(F.softmax(x, dim=0))
     pass
