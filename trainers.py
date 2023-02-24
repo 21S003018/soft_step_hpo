@@ -453,7 +453,7 @@ class NasTrainer(CNNTrainer):
         print(ed_time-st_time, opt_config, opt_loss)
         return
 
-    def observe(self, config, niter=200):
+    def observe(self, config, niter=20):
         st_time = time()
         self.model.update_indicators(config)
         optimizer = torch.optim.SGD(self.model.parameters(
@@ -485,8 +485,8 @@ class RLTrainer(NasTrainer):
         self.device = device
         # load data
         self.dataset = dataset
-        # self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
-        # self.num_image = num_image(self.train_loader)
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
         # init model
         self.model_name = model_name
         if self.model_name == "mnasnet":
@@ -499,60 +499,23 @@ class RLTrainer(NasTrainer):
         # self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         self.flag = 0
         self.gamma = 0.9
+        self.policy_clip = 0.2
         return
 
-    def update(self):
-        for _ in range(self.n_epochs):
-            state_arr, action_arr, old_prob_arr, vals_arr,\
-                reward_arr, dones_arr, batches = \
-                self.memory.sample()
-            values = vals_arr
-            ### compute advantage ###
-            advantage = np.zeros(len(reward_arr), dtype=np.float32)
-            for t in range(len(reward_arr)-1):
-                discount = 1
-                a_t = 0
-                for k in range(t, len(reward_arr)-1):
-                    a_t += discount*(reward_arr[k] + self.gamma*values[k+1] *
-                                     (1-int(dones_arr[k])) - values[k])
-                    discount *= self.gamma*self.gae_lambda
-                advantage[t] = a_t
-            advantage = torch.tensor(advantage).to(self.device)
-            ### SGD ###
-            values = torch.tensor(values).to(self.device)
-            for batch in batches:
-                states = torch.tensor(
-                    state_arr[batch], dtype=torch.float).to(self.device)
-                old_probs = torch.tensor(old_prob_arr[batch]).to(self.device)
-                actions = torch.tensor(action_arr[batch]).to(self.device)
-                dist = self.actor(states)
-                critic_value = self.critic(states)
-                critic_value = torch.squeeze(critic_value)
-                new_probs = dist.log_prob(actions)
-                prob_ratio = new_probs.exp() / old_probs.exp()
-                weighted_probs = advantage[batch] * prob_ratio
-                weighted_clipped_probs = torch.clamp(prob_ratio, 1-self.policy_clip,
-                                                     1+self.policy_clip)*advantage[batch]
-                actor_loss = -torch.min(weighted_probs,
-                                        weighted_clipped_probs).mean()
-                returns = advantage[batch] + values[batch]
-                critic_loss = (returns-critic_value)**2
-                critic_loss = critic_loss.mean()
-                total_loss = actor_loss + 0.5*critic_loss
-                self.actor_optimizer.zero_grad()
-                self.critic_optimizer.zero_grad()
-                total_loss.backward()
-                self.actor_optimizer.step()
-                self.critic_optimizer.step()
-
     def mnasnet_search(self):
-        length_episodes = int(512/8)
-        num_processes = 8
+        valuenet_optimizer = torch.optim.Adam(
+            self.value_model.parameters(), lr=0.001, weight_decay=1e-5)
+        policynet_optimizer = torch.optim.Adam(
+            self.policy_model.parameters(), lr=0.001, weight_decay=1e-5)
+        length_episodes = 32
+        length_epochs = 10
+        rl_epochs = 10
+        num_processes = 4
         curr_state = torch.Tensor(
             [self.environment.sample_state() for _ in range(num_processes)])
         if torch.cuda.is_available():
             curr_state = curr_state.cuda(self.device)
-        while True:
+        for _ in range(length_epochs):
             states = []
             values = []
             rewards = []
@@ -607,46 +570,41 @@ class RLTrainer(NasTrainer):
             for i, value in enumerate(values):
                 advantages[i, :] = returns[i, :] - torch.flatten(value)
             # sgd
-            # construct data loader
-            states = torch.tensor(states).cuda(self.device)
-            print(states.shape)
-            actions = actions
-            old_log_probs = old_log_probs
+            states = torch.stack(states).cuda(self.device)
+            actions = torch.stack(actions).cuda(self.device)
+            old_log_probs = torch.stack(old_log_probs).cuda(self.device)
             rewards = torch.flatten(rewards)
-            values = torch.flatten(rewards)
+            values = torch.flatten(values)
+            returns = torch.flatten(returns)
             advantages = torch.flatten(advantages)
-            batch_size = 64
-            for idx in range(int(length_episodes*num_processes/batch_size)):
-                l = idx * batch_size
-                r = l + batch_size
-            break
+            batch_size = 16
+            for _ in range(rl_epochs):
+                for idx in range(int(length_episodes*num_processes/batch_size)):
+                    l = idx * batch_size
+                    r = l + batch_size
+                    batch_state, batch_action, batch_old_prob, batch_reward, batch_value, batch_return, batch_advantage = states[
+                        l:r, :], actions[l:r, :], old_log_probs[l:r, :], rewards[l:r], values[l:r], returns[l:r], advantages[l:r]
+                    value = self.value_model(batch_state)
+                    logits = self.policy_model(batch_state)
+                    logits = torch.stack(logits).transpose(0, 1)
+                    dist = Categorical(F.softmax(logits, dim=2))
+                    new_log_prob = dist.log_prob(batch_action)
+                    ratio = new_log_prob.exp()/batch_old_prob.exp()
+                    batch_advantage = batch_advantage.reshape(batch_size, 1)
+                    weighted_probs = batch_advantage * ratio
+                    weighted_clipped_probs = batch_advantage * \
+                        torch.clamp(ratio, 1-self.policy_clip,
+                                    1+self.policy_clip)
+                    actor_loss = -torch.min(weighted_probs,
+                                            weighted_clipped_probs).mean()
+                    critic_loss = F.l1_loss(batch_return, value)
+                    loss = actor_loss + 0.5 * critic_loss
+                    valuenet_optimizer.zero_grad()
+                    policynet_optimizer.zero_grad()
+                    loss.backward()
+                    valuenet_optimizer.step()
+                    policynet_optimizer.step()
         return
-
-    def observe(self, config, niter=0):
-        # st_time = time()
-        # self.model.update_indicators(config)
-        # optimizer = torch.optim.SGD(self.model.parameters(
-        # ), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        #     optimizer, niter, eta_min=0.001)
-        # for _ in range(niter):
-        #     self.model.train()
-        #     scheduler.step()
-        #     train_loss = 0
-        #     for imgs, label in self.train_loader:
-        #         if torch.cuda.is_available():
-        #             imgs = imgs.cuda(self.device)
-        #             label = label.cuda(self.device)
-        #         preds = self.model(imgs)
-        #         loss = F.cross_entropy(preds, label)
-        #         optimizer.zero_grad()
-        #         loss.backward()
-        #         train_loss += loss.item()*len(imgs)/self.num_image
-        #         optimizer.step()
-        # ed_time = time()
-        # val_accu, val_loss = self.val()
-        # print(f"Episode~{self.policy.iter}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
-        return 0.5
 
 
 if __name__ == "__main__":
