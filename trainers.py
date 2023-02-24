@@ -607,6 +607,14 @@ class RLTrainer(NasTrainer):
             for i, value in enumerate(values):
                 advantages[i, :] = returns[i, :] - torch.flatten(value)
             # sgd
+            # construct data loader
+            states = torch.tensor(states).cuda(self.device)
+            print(states.shape)
+            actions = actions
+            old_log_probs = old_log_probs
+            rewards = torch.flatten(rewards)
+            values = torch.flatten(rewards)
+            advantages = torch.flatten(advantages)
             batch_size = 64
             for idx in range(int(length_episodes*num_processes/batch_size)):
                 l = idx * batch_size
