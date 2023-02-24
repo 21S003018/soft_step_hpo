@@ -1,4 +1,6 @@
-from model.basicblocks import SoftResidualBlock
+from const import CIFAR10, LINEARSEARCHSPACE
+from trainers import RLTrainer
+# from model.basicblocks import SoftResidualBlock
 from model.cnn_model.resnet import ResNet
 from model.nas_model.softstep import SoftStep
 # from utils import Data
@@ -46,7 +48,7 @@ import utils
 # print(type(struc["b0"]["conv_in"]))
 
 # test softstep conv layer
-x = torch.rand(1, 3, 32, 32)
+# x = torch.rand(1, 3, 32, 32)
 # x = Parameter(torch.Tensor(1))
 # print(x)
 # x.data = x.data.floor()+1.5
@@ -98,15 +100,15 @@ def newton_expansion(c):
     return x
 
 
-out_channels = 32
-expansion = newton_expansion(out_channels)
-controller = Parameter(torch.Tensor(1))
-init.uniform_(controller, 0.5, 0.75)
-# init.uniform_(controller, 115.5/192, 115.5/192)
+# out_channels = 32
+# expansion = newton_expansion(out_channels)
+# controller = Parameter(torch.Tensor(1))
+# init.uniform_(controller, 0.5, 0.75)
+# # init.uniform_(controller, 115.5/192, 115.5/192)
 
-indexes = torch.FloatTensor(range(1, out_channels+1))
-indicators = torch.sigmoid(expansion*out_channels *
-                           (controller-indexes/out_channels))
+# indexes = torch.FloatTensor(range(1, out_channels+1))
+# indicators = torch.sigmoid(expansion*out_channels *
+#                            (controller-indexes/out_channels))
 
 # print(controller.item())
 # for i, indicator in enumerate(indicators):
@@ -187,3 +189,9 @@ indicators = torch.sigmoid(expansion*out_channels *
 #             print(i+1, name, param.grad)
 #     # print("max grad {}: {}. munual grad: {}".format(
 #     #     max_grad_name, max_grad, grad))
+
+# test RL search
+trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR10,
+                    search_space=LINEARSEARCHSPACE, device="cuda:0")
+trainer.mnasnet_search()
+print("init over")
