@@ -22,7 +22,7 @@ class FBnetChannelConv2d(nn.Module):
         self.weight = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
 
-        self.channel_base = Parameter(torch.Tensor(
+        self.channel_alpha = Parameter(torch.Tensor(
             1, out_channels), requires_grad=True)
         self.up_traingle_for_channel = Parameter(torch.tril(torch.ones(
             self.out_channels, self.out_channels)), requires_grad=False)
@@ -33,7 +33,7 @@ class FBnetChannelConv2d(nn.Module):
 
     def reset_parameters(self):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        init.uniform_(self.channel_base, -1, 1)
+        init.uniform_(self.channel_alpha, -1, 1)
         return
 
     def forward(self, x):
@@ -43,5 +43,9 @@ class FBnetChannelConv2d(nn.Module):
         return x
 
     def sample_indicator(self):
-        return torch.mm(F.softmax(self.channel_base, dim=1),
+        return torch.mm(F.softmax(self.channel_alpha, dim=1),
                         self.up_traingle_for_channel)
+
+    def get_channel(self):
+        indicators = self.sample_indicator()
+        return (indicators > 0.5).sum().item()
