@@ -38,7 +38,7 @@ if __name__ == "__main__":
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.ea_search()
     '''mnasnet'''
-    # trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR10,
+    # trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR100,
     #                     search_space=LINEARSEARCHSPACE, device="cuda:0")
     # trainer.mnasnet_search()
     '''darts'''
@@ -53,17 +53,17 @@ if __name__ == "__main__":
     # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
     #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
     # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
-    #                      search_space=BOTTLENECKSEARCHSPACE, device="cuda:0")
+    #                        search_space=BOTTLENECKSEARCHSPACE, device="cuda:0")
     # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
-    #                      search_space=SHALLOWSEARCHSPACE, device="cuda:0")
+    #                        search_space=SHALLOWSEARCHSPACE, device="cuda:0")
     # trainer.train()
     '''singlepath'''
     # trainer = SinglePathTrainer(model_name="singlepath", dataset=CIFAR100,
-    #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
+    #                             search_space=LINEARSEARCHSPACE, device="cuda:0")
     # trainer = SinglePathTrainer(model_name="singlepath", dataset=CIFAR100,
-    #                      search_space=BOTTLENECKSEARCHSPACE, device="cuda:0")
+    #                             search_space=BOTTLENECKSEARCHSPACE, device="cuda:0")
     # trainer = SinglePathTrainer(model_name="singlepath", dataset=CIFAR100,
-    #                      search_space=SHALLOWSEARCHSPACE, device="cuda:0")
+    #                             search_space=SHALLOWSEARCHSPACE, device="cuda:0")
     # trainer.train()
 
     '''mobilenetv2 evaluation'''

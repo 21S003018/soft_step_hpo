@@ -80,7 +80,8 @@ class SinglePathKernelConv2d(nn.Module):
 
     def forward(self, x):
         indicators = self.sample_indicator()
-        mask = torch.ones((self.kernel_size, self.kernel_size))
+        mask = torch.ones((self.kernel_size, self.kernel_size)
+                          ).cuda(self.weight.device)
         mask[1:self.kernel_size-1, 1:self.kernel_size-1] *= indicators[1]
         mask[2:self.kernel_size-2, 2:self.kernel_size-2] *= indicators[2]
         weight = torch.mul(self.weight, mask)
@@ -92,11 +93,11 @@ class SinglePathKernelConv2d(nn.Module):
         norm = [torch.norm(self.weight), torch.norm(
             self.weight[:, :, 1:self.kernel_size-1, 1:self.kernel_size-1]), torch.norm(
             self.weight[:, :, 2:self.kernel_size-2, 2:self.kernel_size-2])]
-        indicators = [1, torch.sigmoid(norm[1]-self.kernel_alpha[1]), torch.sigmoid(
-            norm[1]-self.kernel_alpha[1])*torch.sigmoid(norm[2]-self.kernel_alpha[2])]
+        indicators = [1, torch.sigmoid(norm[1]-self.kernel_alpha[0][1]), torch.sigmoid(
+            norm[1]-self.kernel_alpha[0][1])*torch.sigmoid(norm[2]-self.kernel_alpha[0][2])]
         return indicators
 
-    def get_channel(self):
+    def get_kernel(self):
         indicators = self.sample_indicator()
         n = 0
         for indi in indicators:

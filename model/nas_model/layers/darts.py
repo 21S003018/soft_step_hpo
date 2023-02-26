@@ -25,6 +25,15 @@ class DartsChannelConv2d(nn.Module):
         self.weight_light = Parameter(torch.Tensor(
             out_channels, int(in_channels/self.groups), kernel_size, kernel_size))
 
+        # mask
+        mask = torch.ones(self.out_channels)
+        mask[int(self.out_channels*0.75):] = 0
+        self.mask_opt = Parameter(mask.clone().reshape(
+            len(mask), 1, 1, 1), requires_grad=False)
+        mask[int(self.out_channels*0.5):] = 0
+        self.mask_light = Parameter(mask.clone().reshape(
+            len(mask), 1, 1, 1), requires_grad=False)
+
         self.channel_alpha = Parameter(torch.Tensor(3), requires_grad=True)
         self.reset_parameters()
         return
@@ -39,13 +48,13 @@ class DartsChannelConv2d(nn.Module):
     def forward(self, x):
         out_full = F.conv2d(x, weight=self.weight_full, stride=self.stride,
                             padding=self.padding, groups=self.groups)
-        self.weight_opt[int(self.out_channels*0.75):, :, :, :] = 0
-        out_opt = F.conv2d(x, weight=self.weight_opt, stride=self.stride,
+        weight_opt = torch.mul(self.weight_opt, self.mask_opt)
+        out_opt = F.conv2d(x, weight=weight_opt, stride=self.stride,
                            padding=self.padding, groups=self.groups)
-        self.weight_light[int(self.out_channels*0.5):, :, :, :] = 0
-        out_light = F.conv2d(x, weight=self.weight_light, stride=self.stride,
+        weight_light = torch.mul(self.weight_light, self.mask_light)
+        out_light = F.conv2d(x, weight=weight_light, stride=self.stride,
                              padding=self.padding, groups=self.groups)
-        contributions = torch.softmax(self.channel_alpha)
+        contributions = self.channel_alpha.softmax(dim=0)
         out = out_full*contributions[0]+out_opt * \
             contributions[1]+out_light*contributions[2]
         return out
@@ -97,7 +106,7 @@ class DartsKernelConv2d(nn.Module):
                               padding=self.padding-1, groups=self.groups)
         out_light = F.conv2d(x, weight=self.weight_light, stride=self.stride,
                              padding=self.padding-1*2, groups=self.groups)
-        contributions = torch.softmax(self.kernel_alpha)
+        contributions = self.kernel_alpha.softmax(dim=0)
         out = out_full*contributions[0]+out_middle * \
             contributions[1]+out_light*contributions[2]
         return out

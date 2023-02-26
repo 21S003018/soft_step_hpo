@@ -306,6 +306,8 @@ class BottleneckFBnet(nn.Module):
             "conv_in": self.conv_in.get_channel(),
             "conv_out": self.conv_out.get_channel()
         }
+        # block
+        config["block"] = []
         # stage
         for stage in self.stages:
             config["block"].append({
@@ -449,19 +451,21 @@ class ShallowFBnet(nn.Module):
             "conv_in": self.conv_in.get_channel(),
             "conv_out": self.conv_out.get_channel()
         }
+        # block
+        config["block"] = []
         # stage
         for stage in self.stages:
             config["block"].append({
                 "type": "normal" if stage.stride == 1 else "reduction",
                 "c1": stage.block.conv1.get_channel(),
-                "c2": stage.block.conv3.get_channel(),
+                "c2": stage.block.conv2.get_channel(),
                 "s": stage.stride
             })
             for skip in stage.skips:
                 config["block"].append({
                     "type": "skip",
                     "c1": skip.conv1.get_channel(),
-                    "c2": stage.block.conv3.get_channel(),
+                    "c2": stage.block.conv2.get_channel(),
                     "s": 1
                 })
         return config

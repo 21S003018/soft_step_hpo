@@ -171,6 +171,8 @@ class Environment():
                 next_state.append(stage_conf["skip"][-1]["k"])
             config["stage"].append(stage_conf)
         next_state.append(config["layer"]["conv_out"])
+        for i, t in enumerate(next_state):
+            next_state[i] = int(t)
         return next_state
 
     def get_config(self, state):

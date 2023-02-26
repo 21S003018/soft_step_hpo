@@ -25,8 +25,9 @@ class ChamNet():
         self.controller = GA(func=self.schaffer, n_dim=44, size_pop=96, max_iter=100, prob_mut=0.001, lb=[1]*44, ub=[32.99, 64.99, 3.99, 32.99, 192.99, 3.99, 32.99, 192.99, 3.99, 192.99, 3.99, 192.99, 3.99, 64.99, 384.99, 3.99,
                                                                                                                      384.99, 3.99, 384.99, 3.99, 96.99, 576.99, 3.99, 576.99, 3.99, 576.99, 3.99, 128.99, 768.99, 3.99, 768.99, 3.99, 768.99, 3.99, 768.99, 3.99, 256.99, 1536.99, 3.99, 1536.99, 3.99, 1536.99, 3.99, 1024.99, ], precision=1e-7)
         self.predictor = GaussianProcessRegressor(kernel=C(
-            constant_value=1) * RBF(length_scale=1, length_scale_bounds=(1e-2, 1e2)),)
+            constant_value=1) * RBF(length_scale=1, length_scale_bounds=(1e-2, 1e2)))
         self.predictor_path = "ckpt/chamnet_predictor"
+        self.iter = 0
         return
 
     def schaffer(self, hparams):
@@ -186,8 +187,10 @@ class ChamNet():
                 }
             ]
         }
-        # train_loss = self.observe(config)
-        predict_loss = self.predictor(hparams)
+
+        predict_loss = self.predictor.predict([hparams])
+        print(f"Episode~{self.iter}->pre_loss:{round(predict_loss[0],4)}")
+        self.iter += 1
         return predict_loss
 
     def sample(self) -> dict:
@@ -259,6 +262,7 @@ class ChamNet():
         for _ in range(200):
             x, config = self.sample()
             y = self.observe(config)
+            self.iter += 1
             X.append(x)
             Y.append(y)
         self.predictor.fit(np.array(X), np.array(Y))

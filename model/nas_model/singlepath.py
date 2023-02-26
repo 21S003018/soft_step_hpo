@@ -305,6 +305,8 @@ class BottleneckSinglePath(nn.Module):
             "conv_in": self.conv_in.get_channel(),
             "conv_out": self.conv_out.get_channel()
         }
+        # block
+        config["block"] = []
         # stage
         for stage in self.stages:
             config["block"].append({
@@ -448,6 +450,8 @@ class ShallowSinglePath(nn.Module):
             "conv_in": self.conv_in.get_channel(),
             "conv_out": self.conv_out.get_channel()
         }
+        # block
+        config["block"] = []
         # stage
         for stage in self.stages:
             config["block"].append({

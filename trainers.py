@@ -397,6 +397,8 @@ class NasTrainer(CNNTrainer):
             self.model = LinearSupernet(self.input_channel,
                                         self.inputdim, self.nclass)
             self.policy = ChamNet(search_space, self.observe)
+            self.pretrained_model_path = "ckpt/pretrained_supernet_{}".format(
+                'cifar10' if self.dataset == CIFAR10 else 'cifar100')
         if torch.cuda.is_available():
             self.model.cuda(self.device)
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
@@ -431,6 +433,7 @@ class NasTrainer(CNNTrainer):
                 loss.backward()
                 self.arch_optimizer.step()
                 loss_sum += loss.item() * len(imgs)/self.num_image
+                break
             ed_time = time()
             # eval
             val_accu, val_loss = self.val()
@@ -445,11 +448,9 @@ class NasTrainer(CNNTrainer):
         return
 
     def chamnet_search(self):
-        # train the predictor
-        # self.policy.train_predictor()
         # ea search
-        self.policy.train_predictor(True)
         st_time = time()
+        self.policy.train_predictor(False)
         opt_config, opt_loss = self.policy.controller.run()
         ed_time = time()
         print(ed_time-st_time, opt_config, opt_loss)
@@ -457,6 +458,7 @@ class NasTrainer(CNNTrainer):
 
     def observe(self, config, niter=20):
         st_time = time()
+        self.load_model(self.pretrained_model_path)
         self.model.update_indicators(config)
         optimizer = torch.optim.SGD(self.model.parameters(
         ), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
@@ -499,9 +501,17 @@ class RLTrainer(NasTrainer):
             self.policy_model.cuda(self.device)
             self.value_model.cuda(self.device)
         # self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
+        self.model = LinearSupernet(
+            self.input_channel, self.inputdim, self.nclass)
+        if torch.cuda.is_available():
+            self.model.cuda(self.device)
+        self.pretrained_model_path = "ckpt/pretrained_supernet_{}".format(
+            'cifar10' if self.dataset == CIFAR10 else 'cifar100')
         self.flag = 0
         self.gamma = 0.9
         self.policy_clip = 0.2
+        # idx
+        self.iter = 0
         return
 
     def mnasnet_search(self):
@@ -585,7 +595,7 @@ class RLTrainer(NasTrainer):
                     l = idx * batch_size
                     r = l + batch_size
                     batch_state, batch_action, batch_old_prob, batch_reward, batch_value, batch_return, batch_advantage = states[
-                        l:r, :], actions[l:r, :], old_log_probs[l:r, :], rewards[l:r], values[l:r], returns[l:r], advantages[l:r]
+                        l:r, :].data, actions[l:r, :].data, old_log_probs[l:r, :].data, rewards[l:r].data, values[l:r].data, returns[l:r].data, advantages[l:r].data
                     value = self.value_model(batch_state)
                     logits = self.policy_model(batch_state)
                     logits = torch.stack(logits).transpose(0, 1)
@@ -608,11 +618,42 @@ class RLTrainer(NasTrainer):
                     policynet_optimizer.step()
         return
 
+    def observe(self, config, niter=20):
+        st_time = time()
+        self.load_model(self.pretrained_model_path)
+        self.model.update_indicators(config)
+        optimizer = torch.optim.SGD(self.model.parameters(
+        ), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, niter, eta_min=0.001)
+        for _ in range(niter):
+            self.model.train()
+            scheduler.step()
+            train_loss = 0
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                optimizer.zero_grad()
+                loss.backward()
+                train_loss += loss.item()*len(imgs)/self.num_image
+                optimizer.step()
+        ed_time = time()
+        val_accu, val_loss = self.val()
+        self.iter += 1
+        print(f"Episode~{self.iter}->train_loss:{round(train_loss,4)},val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}")
+        # save struc
+        with open("log/{}/{}_{}.json".format(self.model_name, self.iter, self.dataset), "w") as f:
+            json.dump(self.model.generate_config(), f)
+        return train_loss
+
 
 class FBnetTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None, opt_order=1, device="cuda:0") -> None:
+    def __init__(self, model_name, dataset, search_space=None, opt_order=1, device="cuda:0") -> None:
         # config
-        self.path = path
+        self.path = search_space
         self.model_name = model_name
         self.dataset = dataset
         self.device = device
@@ -622,15 +663,15 @@ class FBnetTrainer(CNNTrainer):
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
         # init model
-        if path == LINEARSEARCHSPACE:
+        if search_space == LINEARSEARCHSPACE:
             self.model = FBnet(self.input_channel,
-                               self.inputdim, self.nclass, path=path)
-        elif path == BOTTLENECKSEARCHSPACE:
+                               self.inputdim, self.nclass, path=search_space)
+        elif search_space == BOTTLENECKSEARCHSPACE:
             self.model = BottleneckFBnet(self.input_channel,
-                                         self.inputdim, self.nclass, path=path)
-        elif path == SHALLOWSEARCHSPACE:
+                                         self.inputdim, self.nclass, path=search_space)
+        elif search_space == SHALLOWSEARCHSPACE:
             self.model = ShallowFBnet(self.input_channel,
-                                      self.inputdim, self.nclass, path=path)
+                                      self.inputdim, self.nclass, path=search_space)
 
         if torch.cuda.is_available():
             self.model.cuda(self.device)
@@ -666,6 +707,7 @@ class FBnetTrainer(CNNTrainer):
                 loss.backward()
                 self.arch_optimizer.step()
                 loss_sum += loss.item() * len(imgs)/self.num_image
+                break
             ed_time = time()
             # eval
             val_accu, val_loss = self.val()
@@ -684,9 +726,9 @@ class FBnetTrainer(CNNTrainer):
 
 
 class SinglePathTrainer(CNNTrainer):
-    def __init__(self, model_name, dataset, path=None, opt_order=1, device="cuda:0") -> None:
+    def __init__(self, model_name, dataset, search_space=None, opt_order=1, device="cuda:0") -> None:
         # config
-        self.path = path
+        self.path = search_space
         self.model_name = model_name
         self.dataset = dataset
         self.device = device
@@ -696,15 +738,15 @@ class SinglePathTrainer(CNNTrainer):
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
         self.num_image = num_image(self.train_loader)
         # init model
-        if path == LINEARSEARCHSPACE:
+        if search_space == LINEARSEARCHSPACE:
             self.model = SinglePath(self.input_channel,
-                                    self.inputdim, self.nclass, path=path)
-        elif path == BOTTLENECKSEARCHSPACE:
+                                    self.inputdim, self.nclass, path=search_space)
+        elif search_space == BOTTLENECKSEARCHSPACE:
             self.model = BottleneckSinglePath(self.input_channel,
-                                              self.inputdim, self.nclass, path=path)
-        elif path == SHALLOWSEARCHSPACE:
+                                              self.inputdim, self.nclass, path=search_space)
+        elif search_space == SHALLOWSEARCHSPACE:
             self.model = ShallowSinglePath(self.input_channel,
-                                           self.inputdim, self.nclass, path=path)
+                                           self.inputdim, self.nclass, path=search_space)
 
         if torch.cuda.is_available():
             self.model.cuda(self.device)
