@@ -433,7 +433,6 @@ class NasTrainer(CNNTrainer):
                 loss.backward()
                 self.arch_optimizer.step()
                 loss_sum += loss.item() * len(imgs)/self.num_image
-                break
             ed_time = time()
             # eval
             val_accu, val_loss = self.val()
@@ -519,7 +518,7 @@ class RLTrainer(NasTrainer):
             self.value_model.parameters(), lr=0.001, weight_decay=1e-5)
         policynet_optimizer = torch.optim.Adam(
             self.policy_model.parameters(), lr=0.001, weight_decay=1e-5)
-        length_episodes = 32
+        length_episodes = 16
         length_epochs = 10
         rl_epochs = 10
         num_processes = 4
@@ -528,6 +527,7 @@ class RLTrainer(NasTrainer):
         if torch.cuda.is_available():
             curr_state = curr_state.cuda(self.device)
         for _ in range(length_epochs):
+            st_time = time()
             states = []
             values = []
             rewards = []
@@ -616,6 +616,7 @@ class RLTrainer(NasTrainer):
                     loss.backward()
                     valuenet_optimizer.step()
                     policynet_optimizer.step()
+            print("time for one episode", time()-st_time)
         return
 
     def observe(self, config, niter=20):
@@ -707,7 +708,6 @@ class FBnetTrainer(CNNTrainer):
                 loss.backward()
                 self.arch_optimizer.step()
                 loss_sum += loss.item() * len(imgs)/self.num_image
-                break
             ed_time = time()
             # eval
             val_accu, val_loss = self.val()

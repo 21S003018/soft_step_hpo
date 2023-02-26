@@ -16,11 +16,11 @@ class LinearBlock(nn.Module):  # normal block or reduction block
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
         self.conv2 = SinglePathKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                       stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+                                            stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = SinglePathChannelConv2d(hidden_planes, out_planes,
-                                        kernel_size=1, bias=False)
+                                             kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
     def forward(self, x):
@@ -43,7 +43,7 @@ class SkipLinearBlock(nn.Module):  # skip block
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
         self.conv2 = SinglePathKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                       stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+                                            stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = nn.Conv2d(hidden_planes, out_planes,
@@ -181,11 +181,11 @@ class Bottleneck(nn.Module):  # normal block or reduction block
         self.bn1 = nn.BatchNorm2d(hidden_planes)
 
         self.conv2 = SinglePathKernelConv2d(hidden_planes, hidden_planes, kernel_size=kernel_size,
-                                       stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
+                                            stride=stride, padding=int(kernel_size/2), bias=False, groups=hidden_planes)
         self.bn2 = nn.BatchNorm2d(hidden_planes)
 
         self.conv3 = SinglePathChannelConv2d(hidden_planes, out_planes,
-                                        kernel_size=1, bias=False)
+                                             kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
         self.short_cut = nn.Sequential(
@@ -335,7 +335,7 @@ class Shallow(nn.Module):  # normal block or reduction block
         self.bn1 = nn.BatchNorm2d(out_planes)
 
         self.conv2 = SinglePathChannelConv2d(out_planes, out_planes, kernel_size=kernel_size,
-                                        stride=1, padding=int(kernel_size/2), bias=False)
+                                             stride=1, padding=int(kernel_size/2), bias=False)
         self.bn2 = nn.BatchNorm2d(out_planes)
 
         self.shortcut = nn.Sequential()
@@ -457,14 +457,14 @@ class ShallowSinglePath(nn.Module):
             config["block"].append({
                 "type": "normal" if stage.stride == 1 else "reduction",
                 "c1": stage.block.conv1.get_channel(),
-                "c2": stage.block.conv3.get_channel(),
+                "c2": stage.block.conv2.get_channel(),
                 "s": stage.stride
             })
             for skip in stage.skips:
                 config["block"].append({
                     "type": "skip",
                     "c1": skip.conv1.get_channel(),
-                    "c2": stage.block.conv3.get_channel(),
+                    "c2": stage.block.conv2.get_channel(),
                     "s": 1
                 })
         return config

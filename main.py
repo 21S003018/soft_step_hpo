@@ -38,20 +38,20 @@ if __name__ == "__main__":
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.ea_search()
     '''mnasnet'''
-    # trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR100,
-    #                     search_space=LINEARSEARCHSPACE, device="cuda:0")
-    # trainer.mnasnet_search()
+    trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR100,
+                        search_space=LINEARSEARCHSPACE, device="cuda:0")
+    trainer.mnasnet_search()
     '''darts'''
-    trainer = NasTrainer(model_name="darts", dataset=CIFAR100,
-                         search_space=LINEARSEARCHSPACE, device="cuda:0")
-    trainer.darts_search()
+    # trainer = NasTrainer(model_name="darts", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
+    # trainer.darts_search()
     '''chamnet'''
     # trainer = NasTrainer(model_name="chamnet", dataset=CIFAR100,
     #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
     # trainer.chamnet_search()
     '''fbnet'''
     # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
-    #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
+    #                        search_space=LINEARSEARCHSPACE, device="cuda:0")
     # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
     #                        search_space=BOTTLENECKSEARCHSPACE, device="cuda:0")
     # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
