@@ -22,6 +22,8 @@ from model.nas_model.softstep import SoftStep, BottleneckSoftStep, ShallowSoftSt
 from model.nas_model.darts import DARTS
 from model.nas_model.chamnet import ChamNet
 from model.nas_model.mnasnet import PolicyNetwork, ValueNetwork, Environment
+from model.nas_model.fbnetv2 import FBnet, BottleneckFBnet, ShallowFBnet
+from model.nas_model.singlepath import SinglePath, BottleneckSinglePath, ShallowSinglePath
 warnings.filterwarnings("ignore")
 
 
@@ -604,6 +606,154 @@ class RLTrainer(NasTrainer):
                     loss.backward()
                     valuenet_optimizer.step()
                     policynet_optimizer.step()
+        return
+
+
+class FBnetTrainer(CNNTrainer):
+    def __init__(self, model_name, dataset, path=None, opt_order=1, device="cuda:0") -> None:
+        # config
+        self.path = path
+        self.model_name = model_name
+        self.dataset = dataset
+        self.device = device
+        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
+        self.arch_lr = 0.1
+        # load data
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
+        # init model
+        if path == LINEARSEARCHSPACE:
+            self.model = FBnet(self.input_channel,
+                               self.inputdim, self.nclass, path=path)
+        elif path == BOTTLENECKSEARCHSPACE:
+            self.model = BottleneckFBnet(self.input_channel,
+                                         self.inputdim, self.nclass, path=path)
+        elif path == SHALLOWSEARCHSPACE:
+            self.model = ShallowFBnet(self.input_channel,
+                                      self.inputdim, self.nclass, path=path)
+
+        if torch.cuda.is_available():
+            self.model.cuda(self.device)
+        return
+
+    def train(self):
+        self.model_optimizer = torch.optim.SGD(
+            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        self.arch_optimizer = torch.optim.SGD(
+            self.model.arch_parameters(), lr=self.arch_lr, momentum=P_MOMENTUM, weight_decay=self.arch_decay)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.model_optimizer, EPOCHS, eta_min=0.001)
+        opt_accu = -1
+        for i in range(EPOCHS):
+            self.model.train()
+            loss_sum = 0
+            scheduler.step()
+            st_time = time()
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
+                # fine tune model
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                self.model_optimizer.zero_grad()
+                loss.backward()
+                self.model_optimizer.step()
+                # fine tune arch
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                self.arch_optimizer.zero_grad()
+                loss.backward()
+                self.arch_optimizer.step()
+                loss_sum += loss.item() * len(imgs)/self.num_image
+            ed_time = time()
+            # eval
+            val_accu, val_loss = self.val()
+            if val_accu > opt_accu:
+                opt_accu = val_accu
+            # show epoch training message
+            epoch_note = ''
+            # epoch_note = 'Arch' if arch_opt else 'Modl'
+            print(
+                f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}, learning rate:{round(scheduler.get_lr()[0],4)}")
+            # save arch params
+            current_config = self.model.generate_config()
+            with open(f"log/fbnet/{i+1}_{self.dataset}.json", "w") as f:
+                json.dump(current_config, f)
+        return
+
+
+class SinglePathTrainer(CNNTrainer):
+    def __init__(self, model_name, dataset, path=None, opt_order=1, device="cuda:0") -> None:
+        # config
+        self.path = path
+        self.model_name = model_name
+        self.dataset = dataset
+        self.device = device
+        self.arch_decay = 1e-5 if self.dataset == CIFAR10 else 1e-5
+        self.arch_lr = 0.1
+        # load data
+        self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
+        self.num_image = num_image(self.train_loader)
+        # init model
+        if path == LINEARSEARCHSPACE:
+            self.model = SinglePath(self.input_channel,
+                                    self.inputdim, self.nclass, path=path)
+        elif path == BOTTLENECKSEARCHSPACE:
+            self.model = BottleneckSinglePath(self.input_channel,
+                                              self.inputdim, self.nclass, path=path)
+        elif path == SHALLOWSEARCHSPACE:
+            self.model = ShallowSinglePath(self.input_channel,
+                                           self.inputdim, self.nclass, path=path)
+
+        if torch.cuda.is_available():
+            self.model.cuda(self.device)
+        return
+
+    def train(self):
+        self.model_optimizer = torch.optim.SGD(
+            self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        self.arch_optimizer = torch.optim.SGD(
+            self.model.arch_parameters(), lr=self.arch_lr, momentum=P_MOMENTUM, weight_decay=self.arch_decay)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.model_optimizer, EPOCHS, eta_min=0.001)
+        opt_accu = -1
+        for i in range(EPOCHS):
+            self.model.train()
+            loss_sum = 0
+            scheduler.step()
+            st_time = time()
+            for imgs, label in self.train_loader:
+                if torch.cuda.is_available():
+                    imgs = imgs.cuda(self.device)
+                    label = label.cuda(self.device)
+                # fine tune model
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                self.model_optimizer.zero_grad()
+                loss.backward()
+                self.model_optimizer.step()
+                # fine tune arch
+                preds = self.model(imgs)
+                loss = F.cross_entropy(preds, label)
+                self.arch_optimizer.zero_grad()
+                loss.backward()
+                self.arch_optimizer.step()
+                loss_sum += loss.item() * len(imgs)/self.num_image
+            ed_time = time()
+            # eval
+            val_accu, val_loss = self.val()
+            if val_accu > opt_accu:
+                opt_accu = val_accu
+            # show epoch training message
+            epoch_note = ''
+            # epoch_note = 'Arch' if arch_opt else 'Modl'
+            print(
+                f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}, learning rate:{round(scheduler.get_lr()[0],4)}")
+            # save arch params
+            current_config = self.model.generate_config()
+            with open(f"log/singlepath/{i+1}_{self.dataset}.json", "w") as f:
+                json.dump(current_config, f)
         return
 
 

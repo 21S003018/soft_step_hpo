@@ -1,4 +1,4 @@
-from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer, HPOTrainer, RLTrainer
+from trainers import CNNTrainer, EvalTrainer, NasTrainer, SoftStepTrainer, HPOTrainer, RLTrainer, FBnetTrainer, SinglePathTrainer
 from const import *
 import torch
 import argparse
@@ -34,13 +34,37 @@ if __name__ == "__main__":
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.ea_search()
     '''pso policy'''
-    trainer = HPOTrainer(policy_name="pso", dataset=CIFAR100,
-                         search_space=LINEARSEARCHSPACE, device='cuda:0')
-    trainer.ea_search()
+    # trainer = HPOTrainer(policy_name="pso", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
+    # trainer.ea_search()
     '''mnasnet'''
     # trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR10,
     #                     search_space=LINEARSEARCHSPACE, device="cuda:0")
     # trainer.mnasnet_search()
+    '''darts'''
+    trainer = NasTrainer(model_name="darts", dataset=CIFAR100,
+                         search_space=LINEARSEARCHSPACE, device="cuda:0")
+    trainer.darts_search()
+    '''chamnet'''
+    # trainer = NasTrainer(model_name="chamnet", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
+    # trainer.chamnet_search()
+    '''fbnet'''
+    # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
+    # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
+    #                      search_space=BOTTLENECKSEARCHSPACE, device="cuda:0")
+    # trainer = FBnetTrainer(model_name="fbnet", dataset=CIFAR100,
+    #                      search_space=SHALLOWSEARCHSPACE, device="cuda:0")
+    # trainer.train()
+    '''singlepath'''
+    # trainer = SinglePathTrainer(model_name="singlepath", dataset=CIFAR100,
+    #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
+    # trainer = SinglePathTrainer(model_name="singlepath", dataset=CIFAR100,
+    #                      search_space=BOTTLENECKSEARCHSPACE, device="cuda:0")
+    # trainer = SinglePathTrainer(model_name="singlepath", dataset=CIFAR100,
+    #                      search_space=SHALLOWSEARCHSPACE, device="cuda:0")
+    # trainer.train()
 
     '''mobilenetv2 evaluation'''
     # trainer = CNNTrainer(MOBILENET, CIFAR10,device="cuda:0")
