@@ -5,6 +5,11 @@ CIFAR10 = "cifar-10-batches-py"
 CIFAR100 = "cifar-100-python"
 MNIST = "mnist"
 SVHN = "svhn"
+IRIS = "iris"
+WINE = "wine"
+CAR = "car"
+AGARICUS = "agaricus_lepiota"
+
 DATASETS = [CIFAR10, CIFAR100, MNIST, SVHN]
 NUMIMAGE = {
     MNIST: 60000,

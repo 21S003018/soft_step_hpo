@@ -235,51 +235,42 @@ class SoftLinear(nn.Module):
         self.out_features = out_features
         self.activation = activation
         self.dense = nn.Linear(self.in_features, self.out_features)
-        self.prelu = PReLU()
-        self.selecter_base = Parameter(torch.Tensor(1, self.out_features))
-        self.selecter_controller = Parameter(torch.Tensor(1))
-        self.up_traingle = Parameter(torch.zeros(
-            (self.out_features, self.out_features)), requires_grad=False)
-        for i in range(self.out_features):
-            for j in range(self.out_features):
-                if i >= j:
-                    self.up_traingle[i, j] = 1
-        self.opt_selecter = None
-        self.opt_selecter_tensor = None
-
+        self.neuron_alpha = Parameter(torch.Tensor(1), requires_grad=True)
+        self.expansion = utils.newton_expansion(self.out_features)
         self.reset_parameters()
         pass
 
     def reset_parameters(self):
         self.dense.reset_parameters()
-        init.uniform_(self.selecter_base, -1, 1)
-        init.uniform_(self.selecter_controller, -1, 1)
+        init.uniform_(self.neuron_alpha, 1-1 /
+                      self.out_features, 1-1/self.out_features)
         return
 
-    def format_selecter(self):
-        EXPANDTIMES = 10
-        selecter_p = F.softmax(self.selecter_base, dim=1)
-        selecter_score = torch.mm(selecter_p, self.up_traingle)
-        selecter_score_zeroed = selecter_score - \
-            torch.sigmoid(self.selecter_controller)
-        selecter_score_expand = selecter_score_zeroed * EXPANDTIMES
-        selecter = torch.sigmoid(selecter_score_expand)
-        self.opt_selecter = round(float(torch.sum(selecter)))
-        self.opt_selecter_tensor = selecter
-        return selecter
-
     def forward(self, x):
-        selecter = self.format_selecter()
         x = self.dense(x)
-        if self.activation == SIDMOID:
-            x = F.sigmoid(x)
-        elif self.activation == PRELU:
-            x = self.prelu(x)
-        x = torch.mul(x, selecter)
         return x
 
-    def get_hparams(self):
-        return self.opt_selecter
+    def sample_indicator(self):
+        indexes = torch.FloatTensor(range(1, self.out_features+1))
+        if torch.cuda.is_available():
+            indexes = indexes.cuda(self.dense.weight.device)
+        return torch.sigmoid(self.expansion*self.out_features*(self.neuron_alpha+self.controller_approx_delta()-indexes/self.out_features))
 
-    def get_hparams_tensor(self):
-        return self.opt_selecter_tensor
+    def controller_approx_delta(self):
+        real_controller = self.neuron_alpha.data*self.out_features
+        real_delta = 0.5-(real_controller - real_controller.floor())
+        unit_delta = real_delta/self.out_features
+        return unit_delta
+
+    def update_neuron_indicators(self):
+        self.neuron_indicators = self.sample_indicator().reshape(
+            (1, self.out_features, 1, 1))
+        return
+
+    def protect_controller(self):
+        if self.neuron_alpha.data > 1:
+            init.uniform_(self.neuron_alpha, 1, 1)
+        if self.neuron_alpha.data < 1/self.out_features:
+            init.uniform_(self.neuron_alpha, 1 /
+                          self.out_features, 1/self.out_features)
+        return

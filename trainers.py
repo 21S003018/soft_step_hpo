@@ -18,13 +18,50 @@ from model.hpo_model.bayes import BayesPolicy
 from model.hpo_model.zoopt import ZooptPolicy, Parameter, Opt
 from model.hpo_model.bandit import HyperbandPolicy
 from model.hpo_model.ea import EAPolicy
-from model.nas_model.softstep import SoftStep, BottleneckSoftStep, ShallowSoftStep
+from model.nas_model.softstep import SoftStep, BottleneckSoftStep, ShallowSoftStep, SoftDense
 from model.nas_model.darts import DARTS
 from model.nas_model.chamnet import ChamNet
 from model.nas_model.mnasnet import PolicyNetwork, ValueNetwork, Environment
 from model.nas_model.fbnetv2 import FBnet, BottleneckFBnet, ShallowFBnet
 from model.nas_model.singlepath import SinglePath, BottleneckSinglePath, ShallowSinglePath
 warnings.filterwarnings("ignore")
+
+
+class SoftMLPTrainer():
+    def __init__(self, dataset, device="cuda:0") -> None:
+        self.device = device
+        self.data = Data()
+        self.dataset = dataset
+        self.ndim, self.nclass, self.train_data, self.test_data = self.data.get(self.dataset)
+        self.model = SoftDense(self.ndim, self.nclass)
+        if torch.cuda.is_available():
+            self.model.cuda()
+        pass
+
+    def train(self, epochs=1000):
+        self.optimizer = torch.optim.SGD(
+            self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        arch_opt = True
+        for i in range(epochs):
+            self.model.train()
+            x, y = self.train_data
+            preds = self.model(x, arch_opt)
+            arch_opt = not arch_opt
+            loss = F.cross_entropy(preds, y.long())
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            if i % 20 == 0:
+                print("Epoch:~{}->train_loss:{},val_accu:{}".format(i+1, loss.item(), self.val()))
+        print(f"dense1:{self.model.dense1.neuron_indicators.sum().item()},dense2:{self.model.dense2.neuron_indicators.sum().item()},dense3:{self.model.dense3.neuron_indicators.sum().item()}")
+        return
+
+    def val(self):
+        x, y = self.test_data
+        self.model.eval()
+        preds = self.model(x)
+        accu = torch.sum(preds.max(1)[1].eq(y).double())/len(y)
+        return accu.item()
 
 
 class CNNTrainer():
@@ -820,13 +857,22 @@ if __name__ == "__main__":
     #     3, 32, 100, path='log/softstep_shallow_cifar100/196_o1_cifar-100-python.json')
     # model = BottleneckEval(
     #     3, 32, 100, path='search_result/softstep_bottleneck_cifar100.json')
+<<<<<<< HEAD
     # model = BottleneckEval(
     #     3, 32, 100, path='log/softstep/18_o1_cifar-100-python.json')
+=======
+    model = BottleneckEval(
+        3, 32, 100, path='log/softstep_bottleneck_cifar100/12_o1_cifar-100-python.json')
+>>>>>>> 5b44e9dd3f97a74b6136e82a7537158ffa2e1f8c
     # model = BottleneckEval(
     #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
     # model = Eval(3, 32, 100, path='search_result/softstep_linear_cifar100.json')
+<<<<<<< HEAD
     # model = Eval(3, 32, 100, path='log/mnasnet/1_cifar-100-python.json')
+=======
+    # model = Eval(3, 32, 100, path='log/pso/16_cifar-100-python.json')
+>>>>>>> 5b44e9dd3f97a74b6136e82a7537158ffa2e1f8c
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
     # stat(model, (3, 32, 32))

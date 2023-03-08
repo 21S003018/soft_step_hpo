@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import json
 import torch.nn.functional as F
-from model.nas_model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d
+from model.nas_model.layers.softconv import SoftConv2d, SoftChannelConv2d, SoftKernelConv2d, SoftLinear
 
 
 class LinearBlock(nn.Module):  # normal block or reduction block
@@ -714,6 +714,48 @@ class ShallowSoftStep(nn.Module):
         self.conv_out.protect_controller()
         return
 
+class SoftDense(nn.Module):
+    def __init__(self, ndim, nclass):
+        super(SoftDense, self).__init__()
+        self.ndim = ndim
+        self.nclass = nclass
+
+        self.dense1 = SoftLinear(ndim, 1024)
+        self.dense2 = SoftLinear(1024, 1024)
+        self.dense3 = SoftLinear(1024, 1024)
+        self.dense4 = nn.Linear(1024, nclass)
+    pass
+
+    def forward(self, x, arch_opt=False):
+        if arch_opt:
+            self.dense1.update_neuron_indicators()
+            self.dense2.update_neuron_indicators()
+            self.dense3.update_neuron_indicators()
+            x = torch.mul(torch.sigmoid(self.dense1(x)),self.dense1.neuron_indicators)
+            x = torch.mul(torch.relu(self.dense2(x)),self.dense1.neuron_indicators)
+            x = torch.mul(torch.sigmoid(self.dense3(x)),self.dense1.neuron_indicators)
+        else:
+            x = torch.mul(torch.sigmoid(self.dense1(x)),self.dense1.neuron_indicators.data)
+            x = torch.mul(torch.relu(self.dense2(x)),self.dense1.neuron_indicators.data)
+            x = torch.mul(torch.sigmoid(self.dense3(x)),self.dense1.neuron_indicators.data)
+        x = self.dense4(x)
+        return x
+
+    def model_parameters(self):
+        for name, param in self.named_parameters():
+            if name.__contains__("weight") or name.__contains__("bias"):
+                yield param
+
+    def arch_parameters(self):
+        for name, param in self.named_parameters():
+            if name.__contains__("alpha"):
+                yield param
+
+    def protect_controller(self):
+        self.dense1.protect_controller()
+        self.dense2.protect_controller()
+        self.dense3.protect_controller()
+        return
 
 if __name__ == '__main__':
     # train_loader, test_loader, input_channel, inputdim, nclass = Data().get(CIFAR10)
