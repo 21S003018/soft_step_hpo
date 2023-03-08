@@ -8,6 +8,7 @@ import math
 import re
 import pickle
 import numpy as np
+import pandas as pd
 
 
 class Data():
@@ -70,15 +71,78 @@ class Data():
                                  )
         return train_loader, test_loader, 3, 32, 100
 
+    def load_iris(self):
+        LabelIndex = 4
+        path = "data/iris/iris.data"
+        df = pd.read_csv(path, header=None)
+        dataset = np.column_stack((df.values[:, :-1],
+                                  sp.LabelEncoder().fit_transform(
+            df[[LabelIndex]].values)))
+        dataset = np.array(dataset, dtype=float)
+        dataset = torch.Tensor(dataset)
+        if torch.cuda.is_available():
+            dataset = dataset.cuda()
+        x_train, x_test, y_train, y_test = train_test_split(
+            dataset[:, :-1], dataset[:, -1:].reshape(len(dataset)), test_size=0.2, random_state=0)
+        return 4, 3, (x_train, y_train), (x_test, y_test)
+
+    def load_wine(self):
+        LabelIndex = 0
+        path = "data/wine/wine.data"
+        df = pd.read_csv(path, header=None)
+        dataset = np.column_stack((df.values[:, 1:],
+                                   sp.LabelEncoder().fit_transform(df[[LabelIndex]].values)))
+        dataset = np.array(dataset, dtype=float)
+        dataset = torch.Tensor(dataset)
+        if torch.cuda.is_available():
+            dataset = dataset.cuda()
+        x_train, x_test, y_train, y_test = train_test_split(
+            dataset[:, :-1], dataset[:, -1:].reshape(len(dataset)), test_size=0.2, random_state=0)
+        return 13, 3, (x_train, y_train), (x_test, y_test)
+
+    def load_car(self):
+        LabelIndex = 6
+        path = "data/car/car.data"
+        df = pd.read_csv(path, header=None)
+        dataset = np.column_stack((sp.OneHotEncoder(sparse=False).fit_transform(df.values[:, :-1]),
+                                   sp.LabelEncoder().fit_transform(df[[LabelIndex]].values)))
+        dataset = np.array(dataset, dtype=float)
+        dataset = torch.Tensor(dataset)
+        if torch.cuda.is_available():
+            dataset = dataset.cuda()
+        x_train, x_test, y_train, y_test = train_test_split(
+            dataset[:, :-1], dataset[:, -1:].reshape(len(dataset)), test_size=0.2, random_state=0)
+        return 21, 4, (x_train, y_train), (x_test, y_test)
+
+    def load_agaricus_lepiota(self):
+        LabelIndex = 0
+        path = "data/agaricus-lepiota/agaricus-lepiota.data"
+        df = pd.read_csv(path, header=None)
+        dataset = np.column_stack((sp.OneHotEncoder(sparse=False).fit_transform(df.values[:, 1:11]),
+                                   sp.OneHotEncoder(sparse=False).fit_transform(
+                                       df.values[:, 12:]),
+                                   sp.LabelEncoder().fit_transform(df[[LabelIndex]].values)))
+        dataset = np.array(dataset, dtype=float)
+        dataset = torch.Tensor(dataset)
+        if torch.cuda.is_available():
+            dataset = dataset.cuda()
+        x_train, x_test, y_train, y_test = train_test_split(
+            dataset[:, :-1], dataset[:, -1:].reshape(len(dataset)), test_size=0.2, random_state=0)
+        return 112, 2, (x_train, y_train), (x_test, y_test)
+
     def get(self, dataset):
-        if dataset == MNIST:
-            return self.load_mnist()
-        if dataset == SVHN:
-            return self.load_svhn()
         if dataset == CIFAR10:
             return self.load_cifar10()
         if dataset == CIFAR100:
             return self.load_cifar100()
+        if dataset == IRIS:
+            return self.load_iris()
+        if dataset == WINE:
+            return self.load_wine()
+        if dataset == CAR:
+            return self.load_car()
+        if dataset == AGARICUS:
+            return self.load_agaricus_lepiota()
         return None
 
 
