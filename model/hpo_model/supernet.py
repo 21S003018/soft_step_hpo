@@ -236,10 +236,10 @@ class LinearStage(nn.Module):
 
     def update_indicators(self, config, full=False):
         self.block.update_indicators(
-            config["block"]["c1"], config["block"]["k"], config["block"]["c2"], full)
+            config["block"]["c1"], int(config["block"]["k"]/2), config["block"]["c2"], full)
         for i, skip in enumerate(self.skips):
             skip.update_indicators(
-                config["skip"][i]["c1"], config["skip"][i]["k"], full)
+                config["skip"][i]["c1"], int(config["skip"][i]["k"]/2), full)
         return
 
 
@@ -297,32 +297,32 @@ class LinearSupernet(nn.Module):
         config = {"type": self.block_type}
         # layer
         config["layer"] = {
-            "conv_in": self.conv_in.out_channels if full else self.conv_in.channel_indicators.sum().item(),
-            "conv_out": self.conv_out.out_channels if full else self.conv_out.channel_indicators.sum().item()
+            "conv_in": int(self.conv_in.out_channels if full else self.conv_in.channel_indicators.sum().item()),
+            "conv_out": int(self.conv_out.out_channels if full else self.conv_out.channel_indicators.sum().item())
         }
         # block
         config["block"] = [{
             "type": "normal",
-            "c1": self.block_in.conv1.out_channels if full else self.block_in.conv1.channel_indicators.sum().item(),
-            "k": self.block_in.conv2.kernel_size if full else self.block_in.conv2.kernel_indicators.sum().item(),
-            "c2": self.block_in.conv3.out_channels if full else self.block_in.conv3.channel_indicators.sum().item(),
+            "c1": int(self.block_in.conv1.out_channels if full else self.block_in.conv1.channel_indicators.sum().item()),
+            "k": int(self.block_in.conv2.kernel_size if full else self.block_in.conv2.kernel_indicators.sum().item()*2+1),
+            "c2": int(self.block_in.conv3.out_channels if full else self.block_in.conv3.channel_indicators.sum().item()),
             "s": 1
         }]
         # stage
         for stage in self.stages:
             config["block"].append({
                 "type": "normal" if stage.stride == 1 else "reduction",
-                "c1": stage.block.conv1.out_channels if full else stage.block.conv1.channel_indicators.sum().item(),
-                "k": stage.block.conv2.kernel_size if full else stage.block.conv2.kernel_indicators.sum().item(),
-                "c2": stage.block.conv3.out_channels if full else stage.block.conv3.channel_indicators.sum().item(),
-                "s": stage.stride
+                "c1": int(stage.block.conv1.out_channels if full else stage.block.conv1.channel_indicators.sum().item()),
+                "k": int(stage.block.conv2.kernel_size if full else stage.block.conv2.kernel_indicators.sum().item()*2+1),
+                "c2": int(stage.block.conv3.out_channels if full else stage.block.conv3.channel_indicators.sum().item()),
+                "s": int(stage.stride)
             })
             for skip in stage.skips:
                 config["block"].append({
                     "type": "skip",
-                    "c1": skip.conv1.out_channels if full else skip.conv1.channel_indicators.sum().item(),
-                    "k": skip.conv2.kernel_size if full else skip.conv2.kernel_indicators.sum().item(),
-                    "c2": stage.block.conv3.out_channels if full else stage.block.conv3.channel_indicators.sum().item(),
+                    "c1": int(skip.conv1.out_channels if full else skip.conv1.channel_indicators.sum().item()),
+                    "k": int(skip.conv2.kernel_size if full else skip.conv2.kernel_indicators.sum().item()*2+1),
+                    "c2": int(stage.block.conv3.out_channels if full else stage.block.conv3.channel_indicators.sum().item()),
                     "s": 1
                 })
         return config

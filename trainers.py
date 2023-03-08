@@ -821,15 +821,15 @@ if __name__ == "__main__":
     # model = BottleneckEval(
     #     3, 32, 100, path='search_result/softstep_bottleneck_cifar100.json')
     # model = BottleneckEval(
-    #     3, 32, 100, path='log/softstep_bottleneck_cifar100/192_o1_cifar-100-python.json')
+    #     3, 32, 100, path='log/softstep/18_o1_cifar-100-python.json')
     # model = BottleneckEval(
     #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
     # model = Eval(3, 32, 100, path='search_result/softstep_linear_cifar100.json')
-    model = Eval(3, 32, 100, path='log/pso/16_cifar-100-python.json')
+    # model = Eval(3, 32, 100, path='log/mnasnet/1_cifar-100-python.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
-    print(stat(model, (3, 32, 32)))
+    # stat(model, (3, 32, 32))
     # thop.profile(model, inputs=torch.randn((1,3,32,32)))
     # torchsummary.summary(model,(3,32,32))
 

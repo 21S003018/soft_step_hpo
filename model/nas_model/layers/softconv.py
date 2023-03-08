@@ -226,3 +226,60 @@ class SoftKernelConv2d(nn.Module):
             init.uniform_(self.kernel_alpha, 1 /
                           int(self.kernel_size/2), 1/int(self.kernel_size/2))
         return
+
+
+class SoftLinear(nn.Module):
+    def __init__(self, in_features, out_features, activation):
+        super(SoftLinear, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.activation = activation
+        self.dense = nn.Linear(self.in_features, self.out_features)
+        self.prelu = PReLU()
+        self.selecter_base = Parameter(torch.Tensor(1, self.out_features))
+        self.selecter_controller = Parameter(torch.Tensor(1))
+        self.up_traingle = Parameter(torch.zeros(
+            (self.out_features, self.out_features)), requires_grad=False)
+        for i in range(self.out_features):
+            for j in range(self.out_features):
+                if i >= j:
+                    self.up_traingle[i, j] = 1
+        self.opt_selecter = None
+        self.opt_selecter_tensor = None
+
+        self.reset_parameters()
+        pass
+
+    def reset_parameters(self):
+        self.dense.reset_parameters()
+        init.uniform_(self.selecter_base, -1, 1)
+        init.uniform_(self.selecter_controller, -1, 1)
+        return
+
+    def format_selecter(self):
+        EXPANDTIMES = 10
+        selecter_p = F.softmax(self.selecter_base, dim=1)
+        selecter_score = torch.mm(selecter_p, self.up_traingle)
+        selecter_score_zeroed = selecter_score - \
+            torch.sigmoid(self.selecter_controller)
+        selecter_score_expand = selecter_score_zeroed * EXPANDTIMES
+        selecter = torch.sigmoid(selecter_score_expand)
+        self.opt_selecter = round(float(torch.sum(selecter)))
+        self.opt_selecter_tensor = selecter
+        return selecter
+
+    def forward(self, x):
+        selecter = self.format_selecter()
+        x = self.dense(x)
+        if self.activation == SIDMOID:
+            x = F.sigmoid(x)
+        elif self.activation == PRELU:
+            x = self.prelu(x)
+        x = torch.mul(x, selecter)
+        return x
+
+    def get_hparams(self):
+        return self.opt_selecter
+
+    def get_hparams_tensor(self):
+        return self.opt_selecter_tensor
