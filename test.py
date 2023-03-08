@@ -1,3 +1,4 @@
+from trainers import SoftMLPTrainer
 from model.cnn_model.eval import Eval, BottleneckEval, ShallowEval
 from torchstat import stat
 from model.hpo_model.supernet import LinearSupernet, BottleneckSupernet, ShallowSupernet
@@ -200,17 +201,21 @@ def newton_expansion(c):
 # trainer.mnasnet_search()
 # print("init over")
 
-policy = RandPolicy(LINEARSEARCHSPACE)
-supernet = LinearSupernet(3, 32, 100)
-if torch.cuda.is_available():
-    supernet.cuda()
-for _ in range(1000):
-    config = policy.sample()
-    supernet.update_indicators(config)
-    config = supernet.generate_config()
-    with open("test.json", "w") as f:
-        json.dump(config, f)
-    model = Eval(3, 32, 100, path="test.json")
-    # if torch.cuda.is_available():
-    #     model.cuda()
-    stat(model, (3, 32, 32))
+# policy = RandPolicy(LINEARSEARCHSPACE)
+# supernet = LinearSupernet(3, 32, 100)
+# if torch.cuda.is_available():
+#     supernet.cuda()
+# for _ in range(1000):
+#     config = policy.sample()
+#     supernet.update_indicators(config)
+#     config = supernet.generate_config()
+#     with open("test.json", "w") as f:
+#         json.dump(config, f)
+#     model = Eval(3, 32, 100, path="test.json")
+#     # if torch.cuda.is_available():
+#     #     model.cuda()
+#     stat(model, (3, 32, 32))
+
+trainer = SoftMLPTrainer(IRIS)
+trainer.train()
+# trainer.train_normal()
