@@ -1,3 +1,4 @@
+import pickle as pkl
 import json
 import warnings
 import numpy as np
@@ -39,7 +40,7 @@ class SoftMLPTrainer():
             self.model.cuda()
         pass
 
-    def train(self, epochs=1000*200):
+    def train(self, epochs=1000*50):
         self.model_optimizer = torch.optim.Adam(
             self.model.model_parameters(), lr=0.001, weight_decay=1e-4)
         # self.model_optimizer = torch.optim.SGD(
@@ -47,24 +48,39 @@ class SoftMLPTrainer():
         self.arch_optimizer = torch.optim.SGD(
             self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         arch_opt = True
-        for i in range(epochs):
-            self.model.train()
-            x, y = self.train_data
-            preds = self.model(x, arch_opt)
-            loss = F.cross_entropy(preds, y.long())
-            if arch_opt:
-                self.arch_optimizer.zero_grad()
-                loss.backward()
-                self.arch_optimizer.step()
-            else:
-                self.model_optimizer.zero_grad()
-                loss.backward()
-                self.model_optimizer.step()
-            arch_opt = not arch_opt
-            if i % 200 == 0:
-                print("Epoch:~{}->train_loss:{},val_accu:{}".format(i +
-                      1, loss.item(), self.val()))
-                print(f"dense1:{self.model.dense1.neuron_indicators.sum().item()},dense2:{self.model.dense2.neuron_indicators.sum().item()},dense3:{self.model.dense3.neuron_indicators.sum().item()}")
+        arch = {"1": [], "2": [], "3": [], "accu": [], "loss": []}
+        try:
+            for i in range(epochs):
+                self.model.train()
+                x, y = self.train_data
+                preds = self.model(x, arch_opt)
+                loss = F.cross_entropy(preds, y.long())
+                if arch_opt:
+                    self.arch_optimizer.zero_grad()
+                    loss.backward()
+                    self.arch_optimizer.step()
+                    self.model.protect_controller()
+                else:
+                    self.model_optimizer.zero_grad()
+                    loss.backward()
+                    self.model_optimizer.step()
+                arch_opt = not arch_opt
+                arch["1"].append(
+                    self.model.dense1.neuron_indicators.sum().item())
+                arch["2"].append(
+                    self.model.dense2.neuron_indicators.sum().item())
+                arch["3"].append(
+                    self.model.dense3.neuron_indicators.sum().item())
+                arch["loss"].append(loss.item())
+                arch["accu"].append(self.val())
+                if i % 2000 == 0:
+                    print("Epoch:~{}->train_loss:{},val_accu:{}".format(i +
+                                                                        1, loss.item(), self.val()))
+                    print(f"dense1:{self.model.dense1.neuron_indicators.sum().item()},dense2:{self.model.dense2.neuron_indicators.sum().item()},dense3:{self.model.dense3.neuron_indicators.sum().item()}")
+        except:
+            pass
+        with open(f"log/{self.dataset}.pkl", "wb") as f:
+            pkl.dump(arch, f)
         return
 
     def train_normal(self, epochs=1000):

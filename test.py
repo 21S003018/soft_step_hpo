@@ -218,4 +218,10 @@ def newton_expansion(c):
 
 trainer = SoftMLPTrainer(IRIS)
 trainer.train()
+trainer = SoftMLPTrainer(WINE)
+trainer.train()
+trainer = SoftMLPTrainer(CAR)
+trainer.train()
+trainer = SoftMLPTrainer(AGARICUS)
+trainer.train()
 # trainer.train_normal()
