@@ -165,43 +165,6 @@ def num_image(loader):
     return res
 
 
-def analyse_trainloss(path, order=1):
-    pattern_trainloss = re.compile("train_loss:(\d.\d+),")
-    pattern_valaccu = re.compile("val_accu:(\d.\d+),")
-    data = []
-    with open(path, 'r') as f:
-        for line in f.readlines():
-            if line.__contains__("Epoch"):
-                data.append((re.findall(pattern_trainloss, line)[
-                            0], re.findall(pattern_valaccu, line)[0]))
-    data = np.array(data)
-    data = np.insert(data, [0], np.array(
-        range(1, len(data)+1)).reshape(len(data), 1), axis=1)
-    data = data[order:int((len(data)-order)/(order+1))*(order+1)+order, :]
-    data = np.reshape(data, (int(len(data)/(order+1)), 3*(order+1)))
-    data = data.tolist()
-    data = sorted(data, key=lambda x: x[-1], reverse=False)
-    for tmp in data:
-        print(tmp)
-    return
-
-
-def analyse_search_time(path,):
-    pattern_time = re.compile("time:(\d+.\d+),")
-    with open(path, "r") as f:
-        data = f.readlines()
-    tot_time = 0
-    for line in data:
-        try:
-            tot_time += float(re.findall(pattern_time, line)[0])
-        except:
-            pass
-    print(tot_time/100*229/3600)
-    return
-
 
 if __name__ == "__main__":
-    # analyse_trainloss("log/softstep_linear_o2_cifar10.log", order=2)
-    # analyse_trainloss("log/softstep_linear_o1_cifar100_3reduction.log")
-    analyse_search_time("log/softstep_shallow_cifar100.log")
     pass

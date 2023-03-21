@@ -7,7 +7,6 @@ import torch
 import math
 import utils
 
-
 class SoftConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1, bias=None, groups=1):
         super(SoftConv2d, self).__init__()
