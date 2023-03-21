@@ -32,34 +32,71 @@ class SoftMLPTrainer():
         self.device = device
         self.data = Data()
         self.dataset = dataset
-        self.ndim, self.nclass, self.train_data, self.test_data = self.data.get(self.dataset)
+        self.ndim, self.nclass, self.train_data, self.test_data = self.data.get(
+            self.dataset)
         self.model = SoftDense(self.ndim, self.nclass)
         if torch.cuda.is_available():
             self.model.cuda()
         pass
 
-    def train(self, epochs=1000):
-        self.optimizer = torch.optim.SGD(
-            self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+    def train(self, epochs=1000*200):
+        self.model_optimizer = torch.optim.Adam(
+            self.model.model_parameters(), lr=0.001, weight_decay=1e-4)
+        # self.model_optimizer = torch.optim.SGD(
+        #     self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        self.arch_optimizer = torch.optim.SGD(
+            self.model.arch_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         arch_opt = True
         for i in range(epochs):
             self.model.train()
             x, y = self.train_data
             preds = self.model(x, arch_opt)
-            arch_opt = not arch_opt
             loss = F.cross_entropy(preds, y.long())
-            self.optimizer.zero_grad()
+            if arch_opt:
+                self.arch_optimizer.zero_grad()
+                loss.backward()
+                self.arch_optimizer.step()
+            else:
+                self.model_optimizer.zero_grad()
+                loss.backward()
+                self.model_optimizer.step()
+            arch_opt = not arch_opt
+            if i % 200 == 0:
+                print("Epoch:~{}->train_loss:{},val_accu:{}".format(i +
+                      1, loss.item(), self.val()))
+                print(f"dense1:{self.model.dense1.neuron_indicators.sum().item()},dense2:{self.model.dense2.neuron_indicators.sum().item()},dense3:{self.model.dense3.neuron_indicators.sum().item()}")
+        return
+
+    def train_normal(self, epochs=1000):
+        self.model_optimizer = torch.optim.Adam(
+            self.model.model_parameters(), lr=0.001, weight_decay=1e-4)
+        # self.model_optimizer = torch.optim.SGD(
+        #     self.model.model_parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
+        arch_opt = False
+        for i in range(epochs):
+            self.model.train()
+            x, y = self.train_data
+            preds = self.model.forward_normal(x, arch_opt)
+            loss = F.cross_entropy(preds, y.long())
+            self.model_optimizer.zero_grad()
             loss.backward()
-            self.optimizer.step()
+            self.model_optimizer.step()
             if i % 20 == 0:
-                print("Epoch:~{}->train_loss:{},val_accu:{}".format(i+1, loss.item(), self.val()))
-        print(f"dense1:{self.model.dense1.neuron_indicators.sum().item()},dense2:{self.model.dense2.neuron_indicators.sum().item()},dense3:{self.model.dense3.neuron_indicators.sum().item()}")
+                print("Epoch:~{}->train_loss:{},val_accu:{}".format(i +
+                      1, loss.item(), self.val_normal()))
         return
 
     def val(self):
         x, y = self.test_data
         self.model.eval()
         preds = self.model(x)
+        accu = torch.sum(preds.max(1)[1].eq(y).double())/len(y)
+        return accu.item()
+
+    def val_normal(self):
+        x, y = self.test_data
+        self.model.eval()
+        preds = self.model.forward_normal(x)
         accu = torch.sum(preds.max(1)[1].eq(y).double())/len(y)
         return accu.item()
 
@@ -866,7 +903,7 @@ if __name__ == "__main__":
     # model = Eval(3, 32, 100, path='log/pso/16_cifar-100-python.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
-    print(stat(model, (3, 32, 32)))
+    # stat(model, (3, 32, 32))
     # thop.profile(model, inputs=torch.randn((1,3,32,32)))
     # torchsummary.summary(model,(3,32,32))
 

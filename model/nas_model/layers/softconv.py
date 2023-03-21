@@ -228,11 +228,10 @@ class SoftKernelConv2d(nn.Module):
 
 
 class SoftLinear(nn.Module):
-    def __init__(self, in_features, out_features, activation):
+    def __init__(self, in_features, out_features,):
         super(SoftLinear, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.activation = activation
         self.dense = nn.Linear(self.in_features, self.out_features)
         self.neuron_alpha = Parameter(torch.Tensor(1), requires_grad=True)
         self.expansion = utils.newton_expansion(self.out_features)
@@ -241,7 +240,8 @@ class SoftLinear(nn.Module):
 
     def reset_parameters(self):
         self.dense.reset_parameters()
-        init.uniform_(self.neuron_alpha, 1-1/self.out_features, 1-1/self.out_features)
+        init.uniform_(self.neuron_alpha, 1-1 /
+                      self.out_features, 1-1/self.out_features)
         return
 
     def forward(self, x):
@@ -262,7 +262,7 @@ class SoftLinear(nn.Module):
 
     def update_neuron_indicators(self):
         self.neuron_indicators = self.sample_indicator().reshape(
-            (1, self.out_features, 1, 1))
+            (1, self.out_features))
         return
 
     def protect_controller(self):

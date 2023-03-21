@@ -38,9 +38,9 @@ if __name__ == "__main__":
     #                      search_space=LINEARSEARCHSPACE, device='cuda:0')
     # trainer.ea_search()
     '''mnasnet'''
-    trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR100,
-                        search_space=LINEARSEARCHSPACE, device="cuda:0")
-    trainer.mnasnet_search()
+    # trainer = RLTrainer(model_name="mnasnet", dataset=CIFAR100,
+    #                     search_space=LINEARSEARCHSPACE, device="cuda:0")
+    # trainer.mnasnet_search()
     '''darts'''
     # trainer = NasTrainer(model_name="darts", dataset=CIFAR100,
     #                      search_space=LINEARSEARCHSPACE, device="cuda:0")
