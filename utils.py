@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 import torch
 import math
 import re
+import os
 import pickle
 import numpy as np
 import pandas as pd
@@ -70,6 +71,60 @@ class Data():
                                  batch_size=32, shuffle=True,
                                  )
         return train_loader, test_loader, 3, 32, 100
+
+    def load_cinic(self):
+        train_transform = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(CINICMEAN, CINICSTD),
+        ])
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(CINICMEAN, CINICSTD),
+        ])
+        data_root_path = "data/cinic-10/"
+        train_dataset = datasets.ImageFolder(
+            os.path.join(data_root_path, "train"), train_transform)
+        valid_dataset = datasets.ImageFolder(
+            os.path.join(data_root_path, "valid"), transform)
+        test_dataset = datasets.ImageFolder(
+            os.path.join(data_root_path, "test"), transform)
+
+        train_loader = DataLoader(
+            dataset=train_dataset, batch_size=64, shuffle=True, num_workers=4,)
+        valid_loader = DataLoader(dataset=valid_dataset,
+                                  batch_size=100, shuffle=True, num_workers=4,)
+        test_loader = DataLoader(dataset=test_dataset,
+                                 batch_size=100, shuffle=True, num_workers=4,)
+        return train_loader, test_loader, 3, 32, 10
+
+    def load_food(self):
+        train_transform = transforms.Compose([
+            transforms.RandomRotation(30),
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.AutoAugment(),
+            transforms.ToTensor(),
+            transforms.Normalize(FOODMEAN, FOODSTD),
+        ])
+        test_transform = transforms.Compose([
+            transforms.Resize(255),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(FOODMEAN, FOODSTD),
+        ])
+        data_root_path = "data/food-101/"
+        train_dataset = datasets.ImageFolder(
+            os.path.join(data_root_path, "train"), train_transform)
+        test_dataset = datasets.ImageFolder(
+            os.path.join(data_root_path, "test"), test_transform)
+
+        train_loader = DataLoader(
+            dataset=train_dataset, batch_size=64, shuffle=True, num_workers=4,)
+        test_loader = DataLoader(dataset=test_dataset,
+                                 batch_size=100, shuffle=True, num_workers=4,)
+        return train_loader, test_loader, 3, 224, 101
 
     def load_iris(self):
         LabelIndex = 4
@@ -143,6 +198,10 @@ class Data():
             return self.load_car()
         if dataset == AGARICUS:
             return self.load_agaricus_lepiota()
+        if dataset == CINIC:
+            return self.load_cinic()
+        if dataset == FOOD:
+            return self.load_food()
         return None
 
 
@@ -165,6 +224,9 @@ def num_image(loader):
     return res
 
 
-
 if __name__ == "__main__":
+    train_loader, test_loader, _, _, _ = Data().get(FOOD)
+    # for img, label in train_loader:
+    #     print(img.size())
+    print(len(train_loader))
     pass

@@ -3,6 +3,7 @@ import json
 import warnings
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
 from const import *
@@ -25,6 +26,7 @@ from model.nas_model.chamnet import ChamNet
 from model.nas_model.mnasnet import PolicyNetwork, ValueNetwork, Environment
 from model.nas_model.fbnetv2 import FBnet, BottleneckFBnet, ShallowFBnet
 from model.nas_model.singlepath import SinglePath, BottleneckSinglePath, ShallowSinglePath
+import torch.backends.cudnn as cudnn
 warnings.filterwarnings("ignore")
 
 
@@ -127,13 +129,13 @@ class CNNTrainer():
         # data
         self.dataset = dataset
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
-        self.num_image = num_image(self.train_loader)
+        # self.num_image = num_image(self.train_loader)
         # model
         self.model_name = model_name
         self.model = eval(self.model_name)(
             self.input_channel, self.inputdim, self.nclass)
         if torch.cuda.is_available():
-            self.model.cuda(self.device)
+            self.model.cuda()
         self.save_model_path = f"ckpt/{self.model_name}_{self.dataset}"
         pass
 
@@ -144,8 +146,8 @@ class CNNTrainer():
             self.model.parameters(), lr=0.1, momentum=P_MOMENTUM, weight_decay=1e-4)
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             self.optimizer, EPOCHS, eta_min=0.001)
-        opt_accu = -1
         for i in range(epochs):
+            cudnn.benchmark = True
             self.model.train()
             loss_sum = 0
             lr_scheduler.step()
@@ -159,21 +161,15 @@ class CNNTrainer():
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                loss_sum += loss.item() * len(imgs)/self.num_image
+                loss_sum += loss.item()
             # eval
             val_accu, val_loss = self.val()
-            if val_accu > opt_accu:
-                opt_accu = val_accu
-                # if save and i < epochs/2:  # special save
-                #     # if save:
-                #     self.save_model()
-                print(
-                    f"Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
-            else:
-                print(f"Epoch~{i+1}->time:{round(time()-st_time,4)}")
+            print(
+                f"Epoch~{i+1}->train_loss:{round(loss_sum/len(self.train_loader),4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(time()-st_time,4)}")
         return
 
     def val(self):
+        cudnn.benchmark = False
         self.model.eval()
         ncorrect = 0
         nsample = 0
@@ -186,9 +182,8 @@ class CNNTrainer():
             ncorrect += torch.sum(preds.max(1)[1].eq(label).double())
             nsample += len(label)
             loss = F.cross_entropy(preds, label)
-            valloss += loss.item() * len(imgs)
-        valloss = valloss/nsample
-        return float((ncorrect/nsample).cpu()), valloss
+            valloss += loss.item()
+        return float((ncorrect/nsample).cpu()), valloss/nsample
 
     def save_model(self, path=None):
         if path:
@@ -249,7 +244,7 @@ class SoftStepTrainer(CNNTrainer):
         self.arch_lr = 0.1
         # load data
         self.train_loader, self.test_loader, self.input_channel, self.inputdim, self.nclass = Data().get(dataset)
-        self.num_image = num_image(self.train_loader)
+        # self.num_image = num_image(self.train_loader)
         # init model
         if path == LINEARSEARCHSPACE:
             self.model = SoftStep(self.input_channel,
@@ -275,6 +270,7 @@ class SoftStepTrainer(CNNTrainer):
             self.model_optimizer, EPOCHS, eta_min=0.001)
         opt_accu = -1
         for i in range(EPOCHS):
+            cudnn.benchmark = True
             self.model.train()
             loss_sum = 0
             scheduler.step()
@@ -299,7 +295,7 @@ class SoftStepTrainer(CNNTrainer):
                 loss.backward()
                 self.arch_optimizer.step()
                 self.model.protect_controller()
-                loss_sum += loss.item() * len(imgs)/self.num_image
+                loss_sum += loss.item()
             ed_time = time()
             # eval
             val_accu, val_loss = self.val()
@@ -309,7 +305,7 @@ class SoftStepTrainer(CNNTrainer):
             epoch_note = ''
             # epoch_note = 'Arch' if arch_opt else 'Modl'
             print(
-                f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum,4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}, learning rate:{round(scheduler.get_lr()[0],4)}")
+                f"({epoch_note})Epoch~{i+1}->train_loss:{round(loss_sum/len(self.train_loader),4)}, val_loss:{round(val_loss, 4)}, val_accu:{round(val_accu, 4)}, time:{round(ed_time-st_time,4)}, learning rate:{round(scheduler.get_lr()[0],4)}")
             # show arch params
             # if arch_opt:
             for name, param in self.model.named_parameters():
@@ -469,6 +465,26 @@ class HPOTrainer(CNNTrainer):
         # save model
         self.save_model(self.pretrained_model_path)
         return
+
+
+class MLP(nn.Module):
+    def __init__(self, ndim, nclass):
+        super(MLP, self).__init__()
+        self.ndim = ndim
+        self.nclass = nclass
+
+        self.dense1 = nn.Linear(ndim, 64)
+        self.dense2 = nn.Linear(64, 128)
+        self.dense3 = nn.Linear(128, 256)
+        self.dense4 = nn.Linear(256, nclass)
+    pass
+
+    def forward(self, x):
+        x = torch.sigmoid(self.dense1(x))
+        x = torch.relu(self.dense2(x))
+        x = torch.relu(self.dense3(x))
+        x = torch.sigmoid(self.dense4(x))
+        return x
 
 
 class NasTrainer(CNNTrainer):
@@ -910,16 +926,16 @@ if __name__ == "__main__":
     #     3, 32, 100, path='log/softstep_shallow_cifar100/196_o1_cifar-100-python.json')
     # model = BottleneckEval(
     #     3, 32, 100, path='search_result/softstep_bottleneck_cifar100.json')
-    model = BottleneckEval(
-        3, 32, 100, path='log/softstep_bottleneck_cifar100/12_o1_cifar-100-python.json')
+    # model = BottleneckEval(
+    #     3, 32, 100, path='log/softstep_bottleneck_cifar100/12_o1_cifar-100-python.json')
     # model = BottleneckEval(
     #     3, 32, 100, path='config/search_space_bottleneck_eval.json')
     # model = Eval(3, 32, 100, path='config/search_space_linear_eval.json')
-    # model = Eval(3, 32, 100, path='search_result/softstep_linear_cifar100.json')
+    model = Eval(3, 32, 100, path='test.json')
     # model = Eval(3, 32, 100, path='log/pso/16_cifar-100-python.json')
     # model = ResNet(3, 32, 100)
     # model = MobileNetV2(3, 32, 100)
-    # stat(model, (3, 32, 32))
+    stat(model, (3, 32, 32))
     # thop.profile(model, inputs=torch.randn((1,3,32,32)))
     # torchsummary.summary(model,(3,32,32))
 

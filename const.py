@@ -5,6 +5,8 @@ CIFAR10 = "cifar-10-batches-py"
 CIFAR100 = "cifar-100-python"
 MNIST = "mnist"
 SVHN = "svhn"
+CINIC = "cinic"
+FOOD = "food"
 IRIS = "iris"
 WINE = "wine"
 CAR = "car"
@@ -25,7 +27,10 @@ MNISTMEAN = (0.1307,)
 MNISTSTD = (0.3081,)
 SVHNMEAN = (0.4376821219921112, 0.4437697231769562, 0.4728044271469116)
 SVHNSTD = (0.19803012907505035, 0.2010156363248825, 0.19703614711761475)
-
+CINICMEAN = [0.47889522, 0.47227842, 0.43047404]
+CINICSTD = [0.24205776, 0.23828046, 0.25874835]
+FOODMEAN = [0.485, 0.456, 0.406]
+FOODSTD = [0.229, 0.224, 0.225]
 
 # """hyper-params"""
 P_MOMENTUM = 0.9
@@ -94,7 +99,7 @@ stages_4_skips_1_conv1_channel = "stages_4_skips_1_conv1_channel"
 stages_4_skips_1_conv2_kernel = "stages_4_skips_1_conv2_kernel"
 stages_4_skips_2_conv1_channel = "stages_4_skips_2_conv1_channel"
 stages_4_skips_2_conv2_kernel = "stages_4_skips_2_conv2_kernel"
-conv_out_channel="conv_out_channel"
+conv_out_channel = "conv_out_channel"
 
 if __name__ == "__main__":
     pass
